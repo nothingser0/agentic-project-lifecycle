@@ -4,6 +4,8 @@
 
 **When to run:** Before `gate:production-deploy` (Medium+ projects).
 
+> **Canonical Standards:** Accessibility score targets (Medium: ≥85, Large/Enterprise: ≥90) and contrast thresholds align with `engine/NUMERIC_STANDARDS.md`.
+
 ---
 
 ## Why This Matters

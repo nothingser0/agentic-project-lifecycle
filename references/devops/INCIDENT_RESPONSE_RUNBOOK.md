@@ -11,8 +11,8 @@
 | Priority | Impact | First Response (Triage) | Mitigation Target | Final Fix Target | Examples |
 |----------|--------|-------------------------|-------------------|------------------|----------|
 | **P0 (Critical)** | Site down, data loss, security breach, payment failed | **≤ 15 minutes** | **≤ 1 hour** (rollback in ≤ 5m stateless / 15–30m stateful PITR) | **≤ 4 hours** | 503 errors, database unreachable, leaked credentials |
-| **P1 (High)** | Core feature broken, major performance degradation | **≤ 1 hour** | **≤ 4 hours** | **≤ 24 hours** | Login broken, payroll generation fails, 50%+ error rate |
-| **P2 (Medium)** | Non-core feature broken, minor performance issue | **≤ 4 hours** | **≤ 1 business day** | **≤ 1 week** | Export CSV broken, slow dashboard load, 5-10% error rate |
+| **P1 (High)** | Core feature broken, major performance degradation | **≤ 1 hour** | **≤ 4 hours** | **≤ 24 hours** | Login broken, payroll generation fails, error rate > 5% (see engine/NUMERIC_STANDARDS.md) |
+| **P2 (Medium)** | Non-core feature broken, minor performance issue | **≤ 4 hours** | **≤ 1 business day** | **≤ 1 week** | Export CSV broken, slow dashboard load, error rate 1–5% (see engine/NUMERIC_STANDARDS.md) |
 | **P3 (Low)** | Cosmetic issue, minor bug | **≤ 1 business day** | **Next sprint** | **≤ 2 weeks** | Typo, misaligned button, chart rendering glitch |
 
 **SLA Terminology Distinction:**

@@ -240,12 +240,12 @@ npm run test:coverage
 **Target:**
 - Overall: ≥ 80%
 - New code: ≥ 80%
-- Critical paths (auth, payment): ≥ 95%
+- Critical paths (auth, payment): 100% (see engine/NUMERIC_STANDARDS.md)
 
 **Flag if:**
 - New function has 0% coverage (no test added)
 - Coverage drops > 5% from base branch
-- Critical path coverage < 95%
+- Critical path coverage < 100%
 
 ---
 

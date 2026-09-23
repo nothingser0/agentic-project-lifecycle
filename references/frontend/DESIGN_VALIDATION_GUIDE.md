@@ -34,8 +34,15 @@
 
 ### Usability Test
 - [ ] User test completed (min 3 users, 1 critical flow)
-- [ ] Major blockers fixed (task completion rate < 80%)
+- [ ] Task completion rate ≥ 80% achieved (see remediation loop below if < 80%)
 - [ ] User feedback recorded (see below)
+
+**Remediation Loop (if task completion rate < 80%):**
+1. Identify specific friction points where users failed or got stuck.
+2. Implement targeted UX/UI fixes (clearer labels, flow simplification, inline guidance).
+3. Retest with 3+ new users (original users retain learned behavior).
+4. Repeat until task completion reaches ≥ 80%.
+5. Only then mark gate:sprint-demo as passed (see engine/NUMERIC_STANDARDS.md § Usability Thresholds).
 ```
 
 ---
@@ -550,7 +557,7 @@ Update `engine/GATE-REGISTRY.md`:
 - Accessibility score ≥ 85 for Medium (≥ 90 for Large+) (Lighthouse)
 - Responsive tested (mobile/tablet/desktop)
 
-**Blocker:** Cannot demo if critical usability issue found (task completion rate < 80%).
+**Blocker:** Cannot demo if task completion rate < 80% (must achieve ≥ 80% via remediation loop).
 
 ---
 
@@ -624,7 +631,7 @@ Before any sprint demo or production deploy:
 2. Test keyboard navigation on 1 critical flow
 3. Test responsive breakpoints (mobile/tablet/desktop)
 4. Record at least 1 user test (3 participants, 1 critical flow)
-5. Fix all critical blockers (task completion rate < 80%)
+5. Fix all critical blockers until task completion rate reaches ≥ 80% (see remediation loop above)
 6. Log non-critical issues as design debt
 
 Do not skip accessibility audit even if timeline is tight.

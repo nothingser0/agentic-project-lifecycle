@@ -23,11 +23,39 @@
 Before executing ANY chaos command (`kill`, `tc`, `pumba`, `stress-ng`, partition injection), the agent or runner MUST verify the environment confirmation gate.
 
 ### Cross-Platform Execution (Windows, macOS, Linux)
-Execute the cross-platform environment verification script before any chaos injection:
+Execute cross-platform environment verification before any chaos injection:
 
-```bash
-# Node.js cross-platform assertion (Exit 0 = safe, Exit 1 = production detected)
-node scripts/verify-chaos-env.mjs
+```javascript
+// verify-chaos-env.mjs (Place in project or run before experiments)
+import { execSync } from 'child_process';
+
+const ENV_VARS = ['NODE_ENV', 'APP_ENV', 'ENVIRONMENT', 'STAGE'];
+const PROD_PATTERNS = ['production', 'prod', 'live', 'mainnet'];
+
+for (const varName of ENV_VARS) {
+  const val = process.env[varName]?.toLowerCase().trim();
+  if (val && PROD_PATTERNS.some(pat => val === pat || val.startsWith(pat))) {
+    console.error(`❌ CRITICAL SAFETY ERROR: ${varName} indicates PRODUCTION!`);
+    process.exit(1);
+  }
+}
+
+try {
+  const ctx = execSync('kubectl config current-context', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'], timeout: 3000 }).trim().toLowerCase();
+  if (PROD_PATTERNS.some(pat => ctx.includes(pat))) {
+    console.error(`❌ CRITICAL SAFETY ERROR: Active kubectl context "${ctx}" indicates PRODUCTION!`);
+    process.exit(1);
+  }
+} catch {}
+
+const dbUrl = process.env.DATABASE_URL?.toLowerCase() || '';
+if (dbUrl && PROD_PATTERNS.some(pat => dbUrl.includes(`_${pat}`) || dbUrl.includes(`-${pat}`) || dbUrl.includes(`/${pat}`))) {
+  console.error('❌ CRITICAL SAFETY ERROR: DATABASE_URL points to a production database target!');
+  process.exit(1);
+}
+
+console.log('✅ Environment confirmed non-production. Safe to proceed with chaos injection.');
+process.exit(0);
 ```
 
 ### CI / POSIX Pipeline Verification

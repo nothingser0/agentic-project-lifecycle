@@ -22,15 +22,21 @@
 ```
 Bug reported
   ↓
+Q0: Security Override Check (Immediate Escalation)
+  Is this a vulnerability with CVSS ≥ 7.0 OR involving:
+  - Auth bypass / privilege escalation
+  - Payment manipulation / unauthorized charges
+  - Sensitive PII / HIPAA PHI / PCI-DSS cardholder data exposure
+  - Remote code execution / SQL injection / active data exfiltration
+  YES → P0 (Critical) IMMEDIATELY, regardless of feature traffic or user reach!
+        (See engine/NUMERIC_STANDARDS.md § Security Escalation)
+  NO → Q1
+
 Q1: Does it block ALL users from using the app?
   YES → P0 (site down, database unreachable)
   NO → Q2
 
-Q2: Is it a security vulnerability or active exploit?
-  CVSS ≥ 7.0, active exploit, leaked production credentials,
-  SQL injection, unescaped XSS, auth bypass, privilege escalation:
-  → P0 (Critical, fix in ≤ 4h)
-  
+Q2: Is it a moderate/low security vulnerability?
   CVSS 4.0–6.9 affecting auth, session integrity, or sensitive PII:
   → P1 (High, fix in ≤ 24h)
   
@@ -94,7 +100,7 @@ can no longer produce a result that contradicts the prose criteria.
 - Database unreachable
 - Authentication completely broken (no one can login)
 - Payment processing failed
-- Security breach (leaked credentials, XSS exploit, SQL injection)
+- Security vulnerability (CVSS ≥ 7.0, auth bypass, SQL injection, RCE, IDOR, or sensitive PHI/PII/payment data leak) — ALWAYS P0 regardless of page traffic or user reach (see engine/NUMERIC_STANDARDS.md)
 - Data loss (deleted records not recoverable)
 - Legal compliance violation (GDPR breach, data leaked)
 
@@ -120,7 +126,7 @@ can no longer produce a result that contradicts the prose criteria.
 **Criteria (any one triggers P1):**
 - Core feature broken (login, signup, data entry, reports)
 - > 50% users affected by a bug
-- Error rate > 10% (10% of requests fail)
+- Error rate > 5% (see engine/NUMERIC_STANDARDS.md)
 - p95 response time > 5s (normally < 1s)
 - External integration broken (API, OAuth, payment gateway)
 
@@ -145,7 +151,7 @@ can no longer produce a result that contradicts the prose criteria.
 **Criteria:**
 - Non-core feature broken (export CSV, search filter)
 - 10-50% users affected
-- Error rate 1-10%
+- Error rate 1–5% (see engine/NUMERIC_STANDARDS.md)
 - Bad UX (confusing, slow but usable)
 - Visual bug (misaligned, wrong color)
 

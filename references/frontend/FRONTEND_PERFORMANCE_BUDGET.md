@@ -78,7 +78,8 @@ module.exports = {
       preset: 'lighthouse:recommended',
       assertions: {
         'categories:performance': ['error', { minScore: 0.85 }],
-        'categories:accessibility': ['error', { minScore: 0.90 }],
+        // Tier-aware: Medium ≥0.85, Large/Enterprise ≥0.90 (see engine/NUMERIC_STANDARDS.md)
+        'categories:accessibility': ['error', { minScore: 0.85 }], // Set to 0.90 for Large/Enterprise tier
         'first-contentful-paint': ['error', { maxNumericValue: 2000 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }]

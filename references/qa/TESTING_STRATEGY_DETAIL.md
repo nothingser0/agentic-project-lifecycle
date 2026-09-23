@@ -4,6 +4,8 @@
 
 **Version:** 1.0.0 (2026 tools)
 
+> **Canonical Standards:** All coverage thresholds (≥80% global, 100% auth/payment critical paths) and quality metrics in this document align with `engine/NUMERIC_STANDARDS.md`. If a numerical threshold conflicts, `NUMERIC_STANDARDS.md` is the authoritative source.
+
 ---
 
 

@@ -4,6 +4,8 @@
 
 **Applies to:** Medium, Large, Enterprise tiers only. Small tier: recommended but not blocking.
 
+> **Canonical Standards:** Error rate alerts (>5% P1, >10% immediate rollback) and latency thresholds align with `engine/NUMERIC_STANDARDS.md`.
+
 ---
 
 ## Gate: Monitoring Ready

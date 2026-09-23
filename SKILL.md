@@ -11,6 +11,21 @@ One skill that covers the entire lifecycle: from a vague idea through to a fully
 
 ---
 
+## ⚖️ Legal & Compliance Disclaimer
+
+**This framework provides software engineering best practices, technical templates, and project management workflows. It does NOT constitute formal legal, regulatory, or certified compliance advice.**
+
+For projects involving:
+- Contractual handover or legal sign-off (`handover_formality: legal` in `CONTEXT.md`)
+- Statutory data regulations (e.g. HIPAA, PCI-DSS, GDPR, SOC 2)
+- Contractual delivery with liability or indemnification clauses
+
+A qualified human with formal legal, compliance, or procurement authority MUST review and execute all binding agreements and compliance checklists before Gate C (Project Closed) or public commercial General Availability. AI agents cannot self-certify legal compliance or execute binding legal agreements.
+
+See: `templates/closure/BAST_TEMPLATE.md` § Legal Review Sign-off and `engine/NUMERIC_STANDARDS.md` § Legal & Regulatory Disclaimers.
+
+---
+
 ## Pipeline
 
 ```
@@ -177,7 +192,7 @@ When these terms appear in module instructions, they carry these specific meanin
 
 8. **A gate is executable only when gate-specific evidence is recorded.**
 
-9. **Quality gates are non-negotiable for Medium+ projects.** Security gate (SAST, dependency audit), performance budget (Lighthouse CI), design validation (a11y, usability test), code review checklist, and test coverage (80%+ lines/statements, 75%+ branches overall, 100% on payment/auth paths — see `references/qa/TESTING_STRATEGY_DETAIL.md`) must pass before production deploy. See `references/security/SECURITY_GATE_GUIDE.md`, `references/frontend/PERFORMANCE_BUDGET_GUIDE.md`, `references/qa/LOAD_TESTING_GUIDE.md`, `references/frontend/DESIGN_VALIDATION_GUIDE.md`, `references/qa/CODE_REVIEW_CHECKLIST.md`, `references/qa/TESTING_STRATEGY_DETAIL.md`. **Coverage must be an enforced CI threshold (a failing exit code below 80%/75%/100%), not just an uploaded report** — configure it as shown in `references/qa/TESTING_STRATEGY_DETAIL.md`'s `vitest.config.ts` example (or the equivalent for the project's test runner). A green test suite with a coverage report attached but no enforced threshold does not satisfy this gate, even though a number is present — the number must have teeth. Attach the raw coverage summary as a build artifact in addition to the enforced threshold, so a human reviewer can verify the actual figure rather than trusting the checkmark alone.
+9. **Quality gates are non-negotiable for Medium+ projects.** Security gate (SAST, dependency audit), performance budget (Lighthouse CI), design validation (a11y, usability test), code review checklist, and test coverage (80%+ lines/statements, 75%+ branches overall, 100% on payment/auth paths — see `engine/NUMERIC_STANDARDS.md` and `references/qa/TESTING_STRATEGY_DETAIL.md`) must pass before production deploy. See `engine/NUMERIC_STANDARDS.md`, `references/security/SECURITY_GATE_GUIDE.md`, `references/frontend/PERFORMANCE_BUDGET_GUIDE.md`, `references/qa/LOAD_TESTING_GUIDE.md`, `references/frontend/DESIGN_VALIDATION_GUIDE.md`, `references/qa/CODE_REVIEW_CHECKLIST.md`, `references/qa/TESTING_STRATEGY_DETAIL.md`. **Coverage must be an enforced CI threshold (a failing exit code below 80%/75%/100%), not just an uploaded report** — configure it as shown in `references/qa/TESTING_STRATEGY_DETAIL.md`'s `vitest.config.ts` example (or the equivalent for the project's test runner). A green test suite with a coverage report attached but no enforced threshold does not satisfy this gate, even though a number is present — the number must have teeth. Attach the raw coverage summary as a build artifact in addition to the enforced threshold, so a human reviewer can verify the actual figure rather than trusting the checkmark alone.
 
 10. **Risk and tech debt are tracked, not ignored.** Risk register (`references/pm/RISK_MANAGEMENT_GUIDE.md`) reviewed weekly. Tech debt register (`references/devops/TECH_DEBT_HOTFIX_GUIDE.md`) capped at 5 high-priority items, with concrete metrics (estimated fix time, blast radius). Hotfix workflow bypasses normal PR only for P0/P1 incidents.
 
