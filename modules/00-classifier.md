@@ -95,6 +95,13 @@ Planning mode is only relevant if tier is Medium or above (used in `02-planning-
 | Large | **Standard** | Phase 0 → 1a → 1 → 2 → 2a → 3 → 5 (relevant probe) → 6 |
 | Enterprise | **Full** | All phases, all gates, all capability folders |
 
+**Regulated MVP Fast-Track Profile (Startups & Rapid Delivery):**
+If a project is classified as Enterprise *solely* due to a statutory compliance override (e.g. HIPAA patient data, PCI payment flow) by a lean team (≤10 people) launching an MVP in <8 weeks:
+- The team may select **Standard (Regulated-MVP)** planning mode instead of 100+ document Full Enterprise planning.
+- **Non-negotiable compliance floor preserved:** All Phase 5 Security (Q34–Q39b) and Compliance (COMP1–COMP2) deep-dives, encryption, audit logging, BAA tracking, and ownership negative tests remain **blocking**.
+- **Pruned overhead:** Multi-team corporate governance (enterprise RACI, departmental budget tracking, steering committee agendas) is reduced to startup equivalents (`STAKEHOLDERS.md`, single-tier charter).
+- Record in `CONTEXT.md`: `planning_mode: Standard`, `regulated_mvp_track: true`.
+
 User can request upgrade mode (e.g. Medium but wants Full planning) — record as `planning_mode_override: user_requested`.
 
 ---

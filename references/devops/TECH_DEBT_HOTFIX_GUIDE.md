@@ -107,6 +107,20 @@ const users = await prisma.user.findMany({ take: limit, skip: offset });
 
 ---
 
+## Tech Debt Prioritization Formula (WSJF / Risk Scoring)
+
+Do not prioritize tech debt on gut feeling. Score each active item:
+
+```
+Tech Debt Priority Score = (Risk Impact [1-5] × Exposure Frequency [1-5]) / Effort [Hours]
+```
+
+- **High Priority (Score > 1.5):** Fix within current or next sprint. Cap at 5 active items.
+- **Medium Priority (Score 0.5 - 1.5):** Schedule in maintenance backlog.
+- **Low Priority (Score < 0.5):** Defer until related module refactoring.
+
+---
+
 ## Tech Debt Categories
 
 | Category | Description | Examples |
@@ -122,22 +136,22 @@ const users = await prisma.user.findMany({ take: limit, skip: offset });
 
 ## Hotfix Workflow
 
-**Trigger:** Critical production bug (P0: site down, data loss, security breach)
+**Trigger:** Critical production bug (P0: site down, data loss, active security exploit) or High bug (P1: core feature broken).
 
-**Goal:** Fix and deploy within 1 hour, bypass normal PR flow
+**Goal:** Rapid mitigation with strict evidence tracking.
 
 ### Step 1: Assess Severity (0-5 min)
 
-| Severity | Description | Examples | Response Time |
-|----------|-------------|----------|---------------|
-| **P0 Critical** | Site down, data loss, security breach | Auth broken, payment broken, SQL injection exploit | Immediate hotfix |
-| **P1 High** | Major feature broken, 5xx > 5% | Checkout fails, dashboard blank, API timeout | Hotfix within 4 hours |
-| **P2 Medium** | Minor feature broken, 5xx < 1% | CSV export fails, filter broken | Normal PR (next deploy) |
-| **P3 Low** | Cosmetic, typo, minor UX | Button text wrong, color off | Backlog |
+| Severity | Description | Examples | Response Time | Fix Target | Review Policy |
+|----------|-------------|----------|---------------|------------|---------------|
+| **P0 Critical** | Site down, data loss, security exploit | Auth broken, payment broken, SQL injection | Immediate (<15 min) | ≤ 4 hours | Emergency PR bypass permitted (post-deploy audit required) |
+| **P1 High** | Major feature broken, 5xx > 5% | Checkout fails, dashboard blank, API timeout | Same day (<1 hr) | ≤ 24 hours | Fast-track PR (at least 1 reviewer required; see BUG_PRIORITY_MATRIX.md) |
+| **P2 Medium** | Minor feature broken, 5xx < 1% | CSV export fails, filter broken | 2 business days | 1 week | Normal PR flow (next regular release) |
+| **P3 Low** | Cosmetic, typo, minor UX | Button text wrong, color off | Next sprint | 2 weeks | Backlog |
 
-**P0/P1 only:** Use hotfix workflow (bypass normal PR review)
-
-**P2/P3:** Normal PR flow (no urgency)
+**P0 only:** Full emergency PR review bypass permitted (with mandatory post-incident audit).  
+**P1:** Fast-track PR with at least one reviewer sign-off (may be approved asynchronously post-deploy to staging; do not fully bypass review).  
+**P2/P3:** Standard PR review and CI/CD ladder.
 
 ---
 

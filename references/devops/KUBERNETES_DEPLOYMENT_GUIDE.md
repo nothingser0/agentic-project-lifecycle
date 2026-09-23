@@ -137,9 +137,20 @@ spec:
       labels:
         app: myapp
     spec:
+      serviceAccountName: myapp-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: myapp
         image: ghcr.io/username/myapp:v1.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         ports:
         - containerPort: 3000
         env:
@@ -732,7 +743,33 @@ USER nextjs
 
 ---
 
-### 2. Network Policies
+### 2. Least-Privilege ServiceAccount & Token Isolation
+
+Never run production pods using the namespace's default ServiceAccount with automounted tokens. Compromised application pods can use the mounted token to query the Kubernetes API.
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: myapp-sa
+  namespace: myapp-production
+automountServiceAccountToken: false  # Do NOT mount K8s API credentials into app container
+```
+
+---
+
+### 3. Container Image Vulnerability Scanning (CI/CD)
+
+Scan images with Trivy before pushing or deploying:
+
+```bash
+# Scan container image for HIGH and CRITICAL vulnerabilities
+trivy image --severity HIGH,CRITICAL --exit-code 1 ghcr.io/username/myapp:v1.0
+```
+
+---
+
+### 4. Network Policies
 
 Restrict pod-to-pod traffic.
 

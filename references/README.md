@@ -117,9 +117,11 @@ The reference guides in this skill are organized into 8 domain-specific subdirec
 
 ---
 
-## 8. AI & Agent Orchestration (`references/ai/`)
+## 8. AI, Data & Agent Orchestration (`references/ai/`, `references/data/`)
 
 | Guide Path | Scope / Purpose |
 |---|---|
 | `references/ai/AI_INTEGRATION_GUIDE.md` | LLM integration patterns, vector search, safety boundaries, and cost tracking |
+| `references/ai/MODEL_EVALUATION_GUIDE.md` | Model evaluation harnesses, golden benchmark datasets, drift alerts, and prompt rollback |
 | `references/ai/AGENT_ORCHESTRATION_GUIDE.md` | Multi-agent coordination, subagent handoffs, and path ownership matrix rules |
+| `references/data/DATA_PIPELINE_GUIDE.md` | OLTP vs OLAP architecture, idempotent ETL/ELT pipelines, dbt data quality gates, and analytics PII masking |

@@ -1,5 +1,10 @@
 # Compliance Automation Guide — GDPR, HIPAA, SOC 2
 
+> ⚠️ **LEGAL DISCLAIMER & MANDATORY HUMAN REVIEW NOTICE:**
+> This document and all generated compliance checklists provide technical engineering guidance only and **DO NOT constitute legal advice, statutory interpretation, or regulatory certification**.
+> Passing automated technical checks or completing these engineering checklists does not grant legal compliance with GDPR, HIPAA, SOC 2, PCI-DSS, or other statutory regimes.
+> Under `engine/DECISION-RULES.md:48-55` and `engine/GATE-REGISTRY.md:23`, an AI agent is strictly forbidden from self-certifying compliance. Formal legal sign-off by a qualified attorney, compliance officer, or certified auditor is mandatory before processing live regulated data or passing Gate C (`legal_reviewed_by`).
+
 **Purpose:** Auto-generate compliance checklists, data mapping, audit logs when legal/compliance requirements selected.
 
 **When to use:** Phase 1 (Planning) when compliance requirement detected (GDPR, HIPAA, SOC 2, CCPA, PCI-DSS).
@@ -149,7 +154,8 @@ Generating compliance checklists...
 - [ ] **Account deletion endpoint implemented** (`/api/me/delete`)
   - [ ] Hard delete user-generated content (posts, comments)
   - [ ] Anonymize data with legal retention (orders: 7 years)
-  - [ ] Delete from backups after retention period
+  - [ ] Record deletion tombstone in `gdpr_erasure_tombstones` table
+  - [ ] Delete from active backups after snapshot retention period
   - [ ] Confirmation required (type "DELETE" to confirm)
   - [ ] Email confirmation sent after deletion
   
@@ -160,6 +166,30 @@ Generating compliance checklists...
   curl -X DELETE -H "Authorization: Bearer $TOKEN" https://myapp.com/api/me/delete
   # User account should be deleted, data anonymized
   ```
+
+### Erasure Tombstone & Backup Replay Pattern (Non-Negotiable)
+
+**The Conflict:** GDPR Article 17 mandates prompt erasure of user personal data, but disaster-recovery database backups are retained for 30–90 days as immutable snapshots. If a database is restored from a backup following a disaster or ransomware event, previously purged personal data is silently resurrected, committing a severe GDPR violation.
+
+**The Solution:**
+1. **Erasure Tombstone Log:** When `/api/me/delete` executes, write an append-only tombstone record containing:
+   - `user_id_hash`: SHA-256 hash of user ID / email
+   - `erased_at`: ISO 8601 UTC timestamp
+   - `request_id`: Audit confirmation identifier
+2. **Dedicated Out-of-Band Storage:** Store the tombstone log in a resilient, independently backed up store (e.g. S3 Object Lock in compliance mode, or dedicated audit database).
+3. **Mandatory Disaster Recovery Replay:** Integrate post-restore tombstone replay into `docs/operations/BACKUP-RESTORE.md` and `references/devops/DISASTER_RECOVERY_GUIDE.md`:
+   ```bash
+   # /opt/scripts/post-restore-gdpr-replay.sh
+   # Executed immediately after any database backup restoration before opening traffic
+   echo "Replaying GDPR erasure tombstones against restored database..."
+   psql $DATABASE_URL << 'EOF'
+   DELETE FROM users WHERE id IN (
+     SELECT user_id FROM gdpr_erasure_tombstones WHERE erased_at <= NOW()
+   );
+   EOF
+   echo "Restored database sanitized of erased accounts."
+   ```
+4. **Traffic Gate:** Production health checks must block external traffic after a restore until `post-restore-gdpr-replay.sh` exits with code 0.
 
 - [ ] **Data retention policy documented**
   - File: `docs/compliance/DATA_RETENTION_POLICY.md`

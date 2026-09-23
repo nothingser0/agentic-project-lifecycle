@@ -10,7 +10,7 @@ Other documents may explain the policy, but must not redefine it differently.
 | Small | n/a | always (no planning phase) | CONTEXT, VERIFY, README, .gitignore | no | no | none |
 | Medium | Lightweight | ask-once with warning | Small + AGENTS, TASKS, ARCHITECTURE, CONTEXT-MAP, .env.example | optional | no | email |
 | Large | Standard | ask-twice with risk confirmation | Medium + OWNERSHIP, contracts/, ADR directory | supported | yes | full |
-| Enterprise | Full | block until complete | Large + formal PM/compliance artifacts during planning/closure | supported | yes | legal |
+| Enterprise | Full (or Standard if Regulated-MVP) | block until complete | Large + formal PM/compliance artifacts during planning/closure | supported | yes | legal |
 
 ## Planning skip policy (canonical)
 

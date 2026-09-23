@@ -28,6 +28,17 @@ Filtered by Q12 (team size) and where the repo lives:
 
 Minimum pipeline regardless of provider: lint → typecheck → test → build, gating merge to main. Deploy is a separate job triggered by a successful merge, not bundled into the same job as tests.
 
+**CI/CD Pipeline Security Floor (GitHub Actions):**
+- **Explicit Least-Privilege `permissions` block is mandatory:** Never omit the top-level `permissions` block in GitHub Actions workflows. Omitting it defaults to broad read/write access for the `GITHUB_TOKEN`, enabling malicious dependencies or compromised PR actions to alter repo code or create releases.
+  ```yaml
+  name: CI
+  on: [push, pull_request]
+  permissions:
+    contents: read # Read-only access by default; declare write only on specific deploy jobs
+  ```
+- **Pin Actions by Full SHA:** Pin third-party actions to full commit SHAs rather than mutable version tags (e.g. `uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1`) to prevent upstream supply-chain compromises.
+- **Never echo secrets:** Never run `set -x` or print environment variables in workflow run steps.
+
 ## Q46 — Environments
 
 - **Prod only** — solo/MVP, accept that testing happens against production or locally. State this trade-off explicitly rather than pretending otherwise.
@@ -274,23 +285,25 @@ CREATE SUBSCRIPTION myapp_sub
   PUBLICATION myapp_pub;
 ```
 
-**Cost comparison (Small tier):**
+**Operational & Cost Reality (Enterprise Tier Only):**
 
-| Service | AWS (us-east-1) | GCP (us-central1) | Total/Month |
-|---------|-----------------|-------------------|-------------|
-| Compute | ECS t3.micro $7 | GKE n1-standard-1 $25 | $32 |
-| Database | RDS t4g.micro $15 | Cloud SQL db-f1-micro $10 | $25 |
-| Storage | S3 10GB $0.23 | Cloud Storage 10GB $0.20 | $0.43 |
-| **Total** | **$22** | **$35** | **$57/month** |
+Multi-cloud is **strictly an Enterprise pattern** (>20 developers, contractually mandated disaster-recovery or regulatory data sovereignty). Small and Medium projects MUST NOT attempt multi-cloud.
+
+| Expense Category | Enterprise Multi-Cloud Baseline (AWS + GCP) | Why Small/Medium Fails Here |
+|---|---|---|
+| **Control Planes** | ~$146/mo (EKS $73/mo + GKE $73/mo base control planes) | Exceeds total monthly budget of Small/Medium projects |
+| **Networking & Transit** | $300–$1,200/mo (IPSec VPN Gateway, AWS Site-to-Site, GCP Cloud Router) | Inter-cloud latency (30-80ms) breaks synchronous DB replication |
+| **Egress Fees** | $0.09/GB cross-cloud transfer | Database streaming replication incurs compounding egress bills |
+| **IAM & Ops Overhead** | 2 IAM models, 2 monitoring stacks, 2 deployment pipelines | Requires dedicated SRE team; impossible for solo or small teams |
+| **Realistic Minimum** | **$800 – $2,500+ / month** | Fantasy micro-instance estimates ignore transit, egress & support |
 
 **Trade-offs:**
-- ✅ High availability (provider outage doesn't take down entire service)
-- ✅ Compliance (data residency in multiple regions/providers)
-- ❌ 2-3x cost vs single-cloud
-- ❌ Complex networking (VPN/interconnect setup)
-- ❌ Operational overhead (two dashboards, two CLIs, two IAM systems)
+- ✅ Survives single-provider catastrophic outage
+- ✅ Meets sovereign data residency contracts
+- ❌ 3–5× cost and operational overhead vs. single-cloud
+- ❌ Complex cross-cloud routing and failure modes
 
-**Recommendation:** Only pursue multi-cloud if compliance/SLA requires it. Default to single-cloud + multi-region within same provider (simpler, cheaper).
+**Strong Recommendation:** Default to **Single-Cloud + Multi-Region** (e.g. AWS `us-east-1` primary + `us-west-2` standby). Multi-region within one cloud provides 99.99% availability at a fraction of the cost, complexity, and latency of cross-cloud architectures.
 
 ## Q48 — Container Registry
 

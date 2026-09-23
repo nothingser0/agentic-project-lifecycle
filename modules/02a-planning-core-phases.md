@@ -88,19 +88,18 @@ Sub-question:
 > "What is the legal relationship for this project?"
 
 Options (filter by project type):
-- **Client-facing:** NDA only / SoW / MSA+SoW / Fixed-price contract / Time & Materials (T&M)
+- **Client-facing (Agency / Vendor):** NDA only / SoW / MSA+SoW / Fixed-price contract / Time & Materials (T&M)
+- **Startup / Product Venture:** Proprietary SaaS / Product MVP (Self-funded or venture-backed; no client SoW required; founding IP assignment + terms/privacy notice scheduled for launch)
 - **Internal:** Internal project approval (email/ticket) / No formal approval needed
 
 Sub-questions:
-- Q0e-i: Document status? (Not started / Draft / Sent / **Signed ✓**)
-- Q0e-ii: Regulated data requiring additional agreements? (GDPR DPA / HIPAA BAA / PCI-DSS /
-  None)
-- Q0e-iii: IP ownership? (Work-for-hire — client owns / License model / Open source /
-  Retained IP — vendor keeps)
+- Q0e-i: Document status? (Not started / Draft / Sent / **Signed ✓** / Startup founder-owned)
+- Q0e-ii: Regulated data requiring additional agreements? (GDPR DPA / HIPAA BAA / PCI-DSS / None)
+- Q0e-iii: IP ownership? (Work-for-hire — client owns / License model / Open source / Retained IP — vendor keeps / Startup-owned)
 
-**→ Gate 1 check:** If Q0e-i ≠ "Signed" and project is client-facing, surface Gate 1 blocker.
-Agent says: "Legal agreement should be signed before development starts. I'll note this as a
-Gate 1 blocker in `LEGAL-REGISTER.md`. Proceeding to planning now at your direction."
+**→ Gate 1 check:** 
+- If client-facing and Q0e-i ≠ "Signed", surface Gate 1 blocker: "Legal agreement should be signed before development starts. I'll note this as a Gate 1 blocker in `LEGAL-REGISTER.md`. Proceeding to planning now at your direction."
+- If Startup / Product Venture: Gate 1 passes without external client SoW; record `legal_track: startup_venture` in `LEGAL-REGISTER.md` and schedule vendor BAAs/DPAs prior to public production launch.
 
 **Q0f — Project Charter Sign-off**
 > "Has the project charter been reviewed and approved by the sponsor? How will sign-off happen?"

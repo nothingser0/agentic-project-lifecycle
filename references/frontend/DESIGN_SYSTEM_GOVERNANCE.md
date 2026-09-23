@@ -395,6 +395,62 @@ export interface ButtonProps {
 
 ---
 
+## Automated Design Token Drift Prevention (CI Gate)
+
+Do not rely on code reviewers to spot hardcoded hex values or arbitrary spacing. Enforce design tokens at `gate:pr` using automated linter rules that fail CI when arbitrary values are introduced.
+
+### 1. Tailwind Arbitrary Value Blocker (ESLint)
+
+Install `eslint-plugin-tailwindcss`:
+```bash
+npm install -D eslint-plugin-tailwindcss
+```
+
+Configure `.eslintrc.json`:
+```json
+{
+  "plugins": ["tailwindcss"],
+  "rules": {
+    "tailwindcss/no-arbitrary-value": "error",
+    "tailwindcss/no-custom-classname": "error"
+  }
+}
+```
+*Effect:* Rejects arbitrary CSS classes like `bg-[#1a2b3c]` or `p-[17px]` directly in CI. Developers and agents are forced to use configured tokens like `bg-brand` or `p-4`.
+
+### 2. Strict CSS Variable Enforcement (Stylelint)
+
+For raw CSS / SCSS / CSS Modules, install `stylelint-declaration-strict-value`:
+```bash
+npm install -D stylelint stylelint-declaration-strict-value
+```
+
+Configure `.stylelintrc.json`:
+```json
+{
+  "plugins": ["stylelint-declaration-strict-value"],
+  "rules": {
+    "scale-unlimited/declaration-strict-value": [
+      ["/color$/", "font-size", "border-radius", "/margin/", "/padding/"],
+      {
+        "ignoreValues": ["transparent", "inherit", "unset", "0", "auto"],
+        "message": "Direct values not allowed for ${property}. Use a CSS token variable (e.g. var(--color-brand))"
+      }
+    ]
+  }
+}
+```
+
+### 3. CI Gate Integration
+
+Add to `VERIFY.md` under `gate:fast`:
+```bash
+# Must pass before merge
+npm run lint:tokens # runs: eslint . && stylelint "**/*.css"
+```
+
+---
+
 ## Design QA Workflow
 
 ### Visual Regression Testing

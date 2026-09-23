@@ -56,7 +56,7 @@ On every phase transition, write this to the project's `CONTEXT.md`:
 ```
 lifecycle_phase: [IDEATION | PLANNING | BUILD | MAINTAIN | CLOSURE | CLOSED]
 complexity_tier: [Small | Medium | Large | Enterprise]
-planning_mode: [Lightweight | Standard | Full | Enterprise]  # only if phase is PLANNING
+planning_mode: [Lightweight | Standard | Full]  # only if phase is PLANNING (Enterprise tier uses Full)
 lifecycle_docs: [none | partial | complete]
 multi_agent: [true | false]
 handover_formality: [none | email | full | legal]  # set at classification, read again at CLOSED (see 04-closure.md)

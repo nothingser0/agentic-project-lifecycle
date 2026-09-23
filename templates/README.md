@@ -31,6 +31,8 @@ Used during the planning interview and project lifecycle governance:
 |---|---|---|
 | `templates/pm/BUSINESS_CASE_TEMPLATE.md` | Phase 0 (Q0a-b) | Business justification and ROI analysis |
 | `templates/pm/PROJECT_CHARTER_TEMPLATE.md` | Phase 0 (Q0c-h) | Formal project charter and executive authority |
+| `templates/pm/PROJECT_OVERVIEW_TEMPLATE.md` | Phase 0 / Planning | High-level system overview and objective tracking (`docs/pm/OVERVIEW.md`) |
+| `templates/pm/LEGAL_REGISTER_TEMPLATE.md` | Phase 0 (Q0e) | Legal relationship, contract register, and BAA tracking (`docs/pm/LEGAL-REGISTER.md`) |
 | `templates/pm/KICKOFF_AGENDA_TEMPLATE.md` | Phase 0 (Q0g) | Structured kickoff meeting agenda |
 | `templates/pm/RACI_MATRIX_TEMPLATE.md` | Phase 0 (Q0d) | RACI matrix with veto notation (`docs/pm/RACI.md`) |
 | `templates/pm/BUDGET_TRACKING_TEMPLATE.md` | Phase 0 / Build | Planned vs actual cost tracking and burn rate (`docs/pm/BUDGET.md`) |
@@ -62,6 +64,7 @@ Used during the planning interview and project lifecycle governance:
 | Template Path | Phase / Timing | Purpose |
 |---|---|---|
 | `templates/dev/DEVELOPER_ONBOARDING_TEMPLATE.md` | Phase 6 (QD2) | 10-minute developer onboarding runbook (`docs/dev-docs/ONBOARDING.md`) |
+| `templates/dev/CONVENTIONS_TEMPLATE.md` | Phase 6 | Project code conventions, directory layout, and git standards (`CONVENTIONS.md`) |
 | `templates/dev/RUNBOOK_LOCAL_TEMPLATE.md` | Phase 6 | Local development runbook and troubleshooting |
 | `templates/dev/AGENT_PROMPTS_TEMPLATE.md` | Phase 6 | Multi-agent execution prompt definitions |
 | `templates/dev/DELIVERY_GATE_TEMPLATE.md` | Phase 6 | Gate verification checklist and evidence record |

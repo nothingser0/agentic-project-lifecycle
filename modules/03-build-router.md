@@ -17,7 +17,8 @@ This module is the full vibe-coding engine: from Rule 0 through closing. Post-pr
 |---|---|---|
 | `complete` | Any | Continue to Consume Mode below |
 | `none` | Small | Continue directly to Rule 0 (planning always skipped per PROJECT-PROFILE.md) |
-| `none` | Medium or Large | Apply ask-once policy per PROJECT-PROFILE.md: prompt user with warning, record skip decision if chosen, then proceed to BUILD |
+| `none` | Medium | Apply ask-once policy with warning per PROJECT-PROFILE.md: prompt user, record `lifecycle_skipped: user_decision` if chosen, proceed to BUILD |
+| `none` | Large | Apply ask-twice policy with risk confirmation per PROJECT-PROFILE.md: Prompt 1 warns of contract/interface breakage; Prompt 2 requires explicit confirmation ("I accept the risk of architecture rework and scope drift") before proceeding to BUILD |
 | `none` | Enterprise | Block: state Enterprise requires planning, proceed to PLANNING phase (no skip option per PROJECT-PROFILE.md) |
 | `partial` | Any | Read the existing docs. For missing docs, generate the minimum before build: `ARCHITECTURE.md` (module boundaries only) and `VERIFY.md` (gate commands). |
 

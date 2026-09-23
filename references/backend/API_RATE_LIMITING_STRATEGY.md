@@ -67,6 +67,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!
 })
 
+// Public endpoints (unauthenticated): 100 requests / 15 min per IP
 export const rateLimitPublic = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, '15 m'),
@@ -74,26 +75,36 @@ export const rateLimitPublic = new Ratelimit({
   prefix: 'ratelimit:public'
 })
 
-export const rateLimitAuth = new Ratelimit({
+// Authenticated API endpoints: 1000 requests / 15 min per User ID
+export const rateLimitAuthenticated = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(1000, '15 m'),
+  analytics: true,
+  prefix: 'ratelimit:authenticated'
+})
+
+// Auth endpoints (login, signup): 5 attempts / 15 min per IP (mitigates single-source brute force)
+export const rateLimitAuthEndpoints = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '15 m'),
   analytics: true,
   prefix: 'ratelimit:auth'
 })
 
+// Sensitive endpoints (password reset, OTP): 3 requests / 15 min per IP + User ID
 export const rateLimitSensitive = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, '15 m'),
+  limiter: Ratelimit.slidingWindow(3, '15 m'),
   analytics: true,
   prefix: 'ratelimit:sensitive'
 })
 ```
 
-**Apply to API route:**
+**Apply to Authenticated API route:**
 
 ```typescript
 // app/api/employees/route.ts
-import { rateLimitAuth } from '@/lib/rate-limit'
+import { rateLimitAuthenticated } from '@/lib/rate-limit'
 import { auth } from '@/lib/auth'
 
 export async function GET(req: Request) {
@@ -104,7 +115,7 @@ export async function GET(req: Request) {
   }
 
   // Rate limit by user ID
-  const { success, limit, remaining, reset } = await rateLimitAuth.limit(session.user.id)
+  const { success, limit, remaining, reset } = await rateLimitAuthenticated.limit(session.user.id)
   
   if (!success) {
     return Response.json(
@@ -126,16 +137,16 @@ export async function GET(req: Request) {
 }
 ```
 
-**Login endpoint (IP-based):**
+**Login endpoint (IP-based brute-force defense):**
 
 ```typescript
 // app/api/auth/login/route.ts
-import { rateLimitSensitive } from '@/lib/rate-limit'
+import { rateLimitAuthEndpoints } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
   // Rate limit by IP
   const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
-  const { success } = await rateLimitSensitive.limit(ip)
+  const { success } = await rateLimitAuthEndpoints.limit(ip)
   
   if (!success) {
     return Response.json(

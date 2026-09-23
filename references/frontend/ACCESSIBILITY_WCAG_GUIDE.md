@@ -307,6 +307,19 @@ this is especially important for the government/education/compliance-driven
 projects this guide is written for, where "compliant" is a claim someone may
 rely on.
 
+**Autonomous Agent Execution Mode (Headless / Non-Human Execution):**
+When an autonomous AI agent executes this SDLC in headless or CI environments without physical screen-reader audio output:
+1. The agent MUST execute and pass Step 1 (automated `axe-core`, `pa11y`, Lighthouse a11y ≥ 90) and programmatic keyboard traversal tests via Playwright (verifying non-trapped focus and visible focus rings).
+2. The agent MUST NOT hallucinate a human tester name or claim full manual screen-reader sign-off.
+3. The agent records in `CONTEXT.md`:
+   ```yaml
+   accessibility_gate:
+     automated_status: PASS
+     manual_screen_reader_audit: PENDING_HUMAN_AUDITOR
+     blocked_for_production: false  # Allows dev/staging; human audit required at gate:production-deploy
+   ```
+4. Development and staging proceed cleanly, while the pending human screen-reader audit is registered in `TASKS.md` for human QA before formal regulatory certification.
+
 ### 1. Automated Testing
 
 Run on every page/component:

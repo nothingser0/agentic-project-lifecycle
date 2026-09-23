@@ -10,19 +10,55 @@
 
 Describe the user-facing purpose in 1–3 sentences. Do not invent requirements here; use the approved brief/PRD as the source of truth.
 
-## Quick start
+---
 
-Project-specific install, development, build, and test commands are recorded in `AGENTS.md` (Medium+) and `VERIFY.md`. Do not invent commands that are not present in the repository.
+## Prerequisites & Environment ("Works on My Machine" Prevention)
 
-## Verification
+Pin toolchain versions explicitly to ensure reproducible execution across developers and agents:
 
-See `VERIFY.md` for the executable verification gates. A gate is not passed until its command exits with code 0.
+- **Runtime:** {Node.js v20.x LTS / Python 3.12+ / Go 1.22+} (Pinned in `.nvmrc` / `.python-version`)
+- **Package Manager:** {pnpm v9+ / npm v10+} (Pinned in `package.json#packageManager`)
+- **Local Infrastructure:** Docker Desktop / OrbStack (for PostgreSQL & Redis containers if applicable)
+- **Environment Config:** Copy `.env.example` to `.env.local` before starting:
+  ```bash
+  cp .env.example .env.local
+  ```
 
-## Project state
+---
 
-See `CONTEXT.md` for the current lifecycle phase, complexity tier, latest milestone, and concrete next action.
+## 5-Minute Quickstart
 
-## Important documentation
+```bash
+# 1. Install dependencies
+npm install # or: pnpm install
 
-- `CONTEXT.md` — current state and resume point
-- `VERIFY.md` — executable verification commands
+# 2. Start local database & run migrations (if applicable)
+docker compose up -d
+npx prisma migrate dev
+
+# 3. Start local development server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to confirm the app runs cleanly.
+
+---
+
+## Verification & Quality Gates
+
+Executable verification commands are defined in `VERIFY.md`. All PRs must pass these gates with exit code `0`:
+
+```bash
+npm run typecheck # TypeScript compiler check
+npm run lint      # Linter & design token check
+npm run test      # Test suite (80%+ coverage required)
+```
+
+---
+
+## Project Documentation & Onboarding
+
+- `docs/dev-docs/ONBOARDING.md` — Full 10-minute developer onboarding and troubleshooting guide
+- `CONTEXT.md` — Current SDLC phase, complexity tier, active milestones, and next actions
+- `VERIFY.md` — Executable verification gates and CI thresholds
+- `ARCHITECTURE.md` — Component boundaries and key technical decisions (ADRs in `docs/decisions/`)
+- `CHANGELOG.md` — Semantic version release notes and breaking changes

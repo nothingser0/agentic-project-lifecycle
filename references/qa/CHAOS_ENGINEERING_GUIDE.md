@@ -247,13 +247,53 @@ Record in `docs/testing/CHAOS-REPORT.md`
 
 ---
 
-## Safety Rules
+## Safety Rules & Programmatic Environment Guard
 
-1. **Never run chaos on production** (unless Game Day, see below)
-2. **Start small:** 1% traffic, 1 minute, rollback ready
-3. **Monitor everything:** Error rate, latency, saturation, traffic (RED/USE metrics)
-4. **Automate rollback:** If error rate >5%, stop experiment
-5. **Blameless postmortem:** Focus on system, not person
+1. **Never run chaos on production** (unless explicit authorized Game Day with IC assigned)
+2. **Programmatic Environment Confirmation Gate (MANDATORY):** Every automated or manual chaos command MUST be invoked through a safety guard wrapper. Raw terminal execution of `tc`, `stress-ng`, or `kill -9` is strictly forbidden.
+3. **Start small:** 1% traffic, 1 minute, rollback ready
+4. **Monitor everything:** Error rate, latency, saturation, traffic (RED/USE metrics)
+5. **Automate rollback:** If error rate >5%, stop experiment
+6. **Blameless postmortem:** Focus on system, not person
+
+### Executable Safety Guard Script
+
+Ensure all chaos tooling runs through this pre-flight validation:
+
+```bash
+#!/bin/bash
+# scripts/chaos-guard.sh
+# Usage: ./scripts/chaos-guard.sh <chaos-command> [args...]
+
+set -euo pipefail
+
+TARGET_ENV="${CHAOS_TARGET_ENV:-staging}"
+CURRENT_CLUSTER="$(kubectl config current-context 2>/dev/null || echo 'local')"
+
+echo "🔍 Chaos Safety Check: verifying execution target..."
+
+# Strict production block
+if [[ "$TARGET_ENV" =~ ^(prod|production|live)$ ]] || [[ "$CURRENT_CLUSTER" =~ (prod|production|live) ]]; then
+  if [[ "${GAME_DAY_AUTHORIZED:-false}" != "true" ]] || [[ -z "${GAME_DAY_INCIDENT_COMMANDER:-}" ]]; then
+    echo "❌ CRITICAL: Chaos experiment BLOCKED on production environment!" >&2
+    echo "Target: $TARGET_ENV | Cluster context: $CURRENT_CLUSTER" >&2
+    echo "Production chaos requires: GAME_DAY_AUTHORIZED=true and GAME_DAY_INCIDENT_COMMANDER='<lead_name>'" >&2
+    exit 1
+  fi
+  echo "⚠️ LIVE GAME DAY ACTIVE: Authorized by Incident Commander $GAME_DAY_INCIDENT_COMMANDER"
+else
+  echo "✅ Target verified as non-production ($TARGET_ENV / $CURRENT_CLUSTER)."
+fi
+
+# Execute underlying chaos command
+exec "$@"
+```
+
+Example usage:
+```bash
+# Run safely in staging
+CHAOS_TARGET_ENV=staging ./scripts/chaos-guard.sh stress-ng --cpu 2 --timeout 30s
+```
 
 ---
 

@@ -26,11 +26,14 @@ Q1: Does it block ALL users from using the app?
   YES → P0 (site down, database unreachable)
   NO → Q2
 
-Q2: Is it a security issue? (leaked credentials, XSS, SQL injection,
-    auth bypass, privilege escalation — regardless of how many users
-    can currently trigger it)
+Q2: Is it a high-severity security vulnerability or breach?
+    (CVSS ≥ 7.0, active exploit, leaked production credentials,
+    SQL injection, unescaped XSS, auth bypass, privilege escalation)
   YES → P0
-  NO → Q3
+  NO (Security issue with CVSS < 7.0, missing hardening header,
+      or non-exploitable transitive dependency) → Route to P2 (Medium)
+      or P3 (Low) based on exposure and blast radius.
+  NO (Not a security issue) → Q3
 
 Q3: Does it cause data loss, or a legal/compliance violation
     (GDPR breach, data leaked)?
