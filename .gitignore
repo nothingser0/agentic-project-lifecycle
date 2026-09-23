@@ -1,0 +1,18 @@
+# Dependencies & Runtime
+node_modules/
+dist/
+build/
+
+# Local AI agent cache & session artifacts
+.omo/
+.codegraph/
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+*.log
