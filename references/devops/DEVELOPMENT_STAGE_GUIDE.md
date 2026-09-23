@@ -499,7 +499,7 @@ Post-deployment:
 □ Smoke test: login, core transactions, critical integrations — all alive
 □ Error monitoring shows no spikes (Sentry / Datadog / etc.)
 □ Response time is normal (check monitoring dashboard)
-□ Rollback decision point: if P1 issue within the first 30 minutes, roll back now
+□ Rollback decision point: monitor production closely for first 30 minutes post-deploy; if P1 issue persists past 10 minutes without immediate fix, execute rollback SOP within 15 minutes (per ROLLBACK_DEPLOYMENT_GUIDE.md)
 
 Delivery:
 □ Release notes sent to client

@@ -16,6 +16,42 @@
 
 ---
 
+## 🛑 Non-Negotiable Safety Gate: Environment Assertion
+
+**NEVER execute chaos experiments against a live production environment without explicit multi-party executive sign-off.**
+
+Before executing ANY chaos command (`kill`, `tc`, `pumba`, `stress-ng`, partition injection), the agent or runner MUST verify the environment confirmation gate.
+
+### Cross-Platform Execution (Windows, macOS, Linux)
+Execute the cross-platform environment verification script before any chaos injection:
+
+```bash
+# Node.js cross-platform assertion (Exit 0 = safe, Exit 1 = production detected)
+node scripts/verify-chaos-env.mjs
+```
+
+### CI / POSIX Pipeline Verification
+```bash
+# 1. Assert non-production environment variable
+if [ "$NODE_ENV" = "production" ] || [ "$APP_ENV" = "production" ] || [ "$ENVIRONMENT" = "production" ]; then
+  echo "❌ CRITICAL SAFETY ERROR: Chaos experiment attempted against PRODUCTION environment. Aborting immediately." >&2
+  exit 1
+fi
+
+# 2. Assert K8s context / DB connection string is non-production
+CURRENT_CTX=$(kubectl config current-context 2>/dev/null || echo "none")
+if [[ "$CURRENT_CTX" =~ (prod|production|live) ]]; then
+  echo "❌ CRITICAL SAFETY ERROR: Kubernetes context ($CURRENT_CTX) points to PRODUCTION cluster. Aborting." >&2
+  exit 1
+fi
+
+echo "✅ Environment confirmed non-production (Target: $APP_ENV, Context: $CURRENT_CTX). Proceeding with chaos injection."
+```
+
+If ANY safety assertion fails: **HALT immediately**. Do not proceed.
+
+---
+
 ## Chaos Experiments (by Severity)
 
 ### Level 1: Component Failure (Start Here)
@@ -256,9 +292,26 @@ Record in `docs/testing/CHAOS-REPORT.md`
 5. **Automate rollback:** If error rate >5%, stop experiment
 6. **Blameless postmortem:** Focus on system, not person
 
-### Executable Safety Guard Script
+### Executable Safety Guard (Inline or Script)
 
-Ensure all chaos tooling runs through this pre-flight validation:
+Ensure all chaos tooling runs through pre-flight environment validation. In zero-script environments, agents execute the pre-flight assertion inline before invoking any chaos tool:
+
+```bash
+# Inline Pre-flight Assertion (Recommended for Agent Runners):
+TARGET_ENV="${CHAOS_TARGET_ENV:-staging}"
+CURRENT_CLUSTER="$(kubectl config current-context 2>/dev/null || echo 'local')"
+if [[ "$TARGET_ENV" =~ ^(prod|production|live)$ ]] || [[ "$CURRENT_CLUSTER" =~ (prod|production|live) ]]; then
+  if [[ "${GAME_DAY_AUTHORIZED:-false}" != "true" ]] || [[ -z "${GAME_DAY_INCIDENT_COMMANDER:-}" ]]; then
+    echo "❌ CRITICAL: Chaos experiment BLOCKED on production environment!" >&2
+    exit 1
+  fi
+  echo "⚠️ LIVE GAME DAY ACTIVE: Authorized by Incident Commander $GAME_DAY_INCIDENT_COMMANDER"
+else
+  echo "✅ Target verified as non-production ($TARGET_ENV / $CURRENT_CLUSTER)."
+fi
+```
+
+Or invoke via wrapped script `scripts/chaos-guard.sh`:
 
 ```bash
 #!/bin/bash

@@ -581,10 +581,10 @@ const dateString = new Intl.DateTimeFormat(locale).format(date);
 
 ## Integration with Project Lifecycle
 
-**Update `modules/02a-planning-core-phases.md` Phase 1:**
+**Mapping in `modules/02b-planning-stack-setup.md` Phase 5 (Cross-Cutting):**
 
 ```markdown
-### Q1f — Internationalization (i18n)
+### Q61 — Internationalization (i18n)
 
 > "Does the app need multi-language support?"
 
@@ -595,9 +595,9 @@ const dateString = new Intl.DateTimeFormat(locale).format(date);
 - **Yes, with RTL** (Arabic, Hebrew)
 
 **Sub-questions:**
-- Q1f-i: Which languages? (English, Indonesian, Spanish, French, German, Japanese, Arabic, etc.)
-- Q1f-ii: Translation workflow? (DIY + Google Translate | Professional service | Continuous localization)
-- Q1f-iii: RTL support needed? (Yes/No)
+- Q61-i: Which languages? (English, Indonesian, Spanish, French, German, Japanese, Arabic, etc.)
+- Q61-ii: Translation workflow? (DIY + Google Translate | Professional service | Continuous localization)
+- Q61-iii: RTL support needed? (Yes/No)
 
 **Output files:**
 - `messages/en.json`, `messages/id.json`, etc.
@@ -615,7 +615,7 @@ const dateString = new Intl.DateTimeFormat(locale).format(date);
 
 When user mentions "multi-language" or "international users":
 
-1. Ask Q1f (languages needed + translation workflow)
+1. Ask Q61 (languages needed + translation workflow)
 2. Setup i18n library (next-intl for Next.js, vue-i18n for Vue)
 3. Extract all hardcoded strings to translation files
 4. Implement language switcher

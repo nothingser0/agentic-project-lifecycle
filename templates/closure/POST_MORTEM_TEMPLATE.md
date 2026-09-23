@@ -44,6 +44,15 @@ to look good:
 
 ## For Teams
 
+### Blameless Culture Policy (Mandatory)
+
+This post-mortem follows an explicit **blameless incident analysis framework**:
+
+1. **Focus on System Failures, Not Human Error:** Root causes must identify system defects, missing automation, absent guardrails, or process gaps—never individual negligence, lack of care, or personal mistakes.
+2. **Prohibited Attribution:** Phrases like "developer forgot to...", "engineer was careless", or "reviewer missed..." are strictly prohibited. Assume all participants had good intentions and acted on the best information available at the time. Instead, ask "Why did the system permit this state to cause an outage?" three times to isolate systemic root causes.
+3. **Redact Individual Names in Timelines:** Timeline events and causal chains must reference functional roles (e.g. `on-call engineer`, `deployment operator`, `reviewer`), never individual personal names.
+4. **Resilience Over Punishment:** The sole objective of this retrospective is collective organizational learning and technical hardening. Post-mortems containing punitive language or naming individuals in root-cause sections will be rejected for revision before sign-off.
+
 ### What went well (Continue / Liked)
 
 | Item | Why this is important to keep |

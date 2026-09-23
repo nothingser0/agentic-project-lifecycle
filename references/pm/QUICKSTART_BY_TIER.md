@@ -37,14 +37,14 @@
   - `02a-planning-core-phases.md` Phase 0 (10 questions, 20 min — business case + sponsor)
   - `02a-planning-core-phases.md` Phase 1a (4 questions, 15 min — requirement gathering SHORT version)
   - `02a-planning-core-phases.md` Phase 2a (5 questions, 15 min — timeline baseline)
-  - `02b-planning-stack-setup.md` Phase 6 only (tech stack + scaffold, 10 min)
+  - `02b-planning-stack-setup.md` Phase 3 (Tech Stack) and Phase 6 (Build Setup, 20 min)
 - `modules/03-build-router.md` → all sections (45 min — build loop + quality gates)
 - `references/security/SECURITY_GATE_GUIDE.md` (10 min — MUST read before first PR)
 - `references/frontend/DESIGN_VALIDATION_GUIDE.md` (10 min — MUST read before first demo)
 
 ### You CAN skip:
 - Phase 1 full discovery (use Phase 1a short version instead)
-- Phase 3-4-5 deep probes (use lightweight alternatives)
+- Phase 4 Design and Phase 5 deep probes (use lightweight defaults; stack is chosen in Phase 3)
 - Enterprise references (EVM tracking, chaos engineering, vendor management)
 
 ### Files you'll create:
@@ -101,6 +101,8 @@
 ---
 
 ## Enterprise (21+ people, compliance/SLA, 12+ months)
+
+*Note on Regulated MVP Fast-Track:* If classified as Enterprise solely due to statutory compliance (HIPAA/PCI) by a lean team (≤10 people, <8 weeks), see `modules/00-classifier.md:106` and use **Standard (Regulated-MVP)** mode to preserve compliance gates while pruning enterprise governance overhead.
 
 ### You MUST read:
 - Everything in Large +

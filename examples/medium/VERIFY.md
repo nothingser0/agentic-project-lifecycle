@@ -20,7 +20,7 @@ npx vitest run --coverage
 npm run build
 ```
 
-Coverage floor: lines ≥ 70% in `src/modules/expenses` and `src/modules/auth`.
+Coverage floor: lines ≥ 80% overall, 100% in `src/modules/auth` (enforced via vitest thresholds per SKILL.md Rule 9).
 
 ## gate:qa — after e2e tests are written
 

@@ -16,7 +16,7 @@
 | **LCP (Largest Contentful Paint)** | < 4.0s | < 2.5s | < 2.0s | Web Vitals |
 | **INP (Interaction to Next Paint)** | < 300ms | < 200ms | < 150ms | Web Vitals (replaces legacy FID) |
 | **CLS (Cumulative Layout Shift)** | < 0.25 | < 0.1 | < 0.1 | Web Vitals |
-| **TTI (Time to Interactive)** | < 7s | < 5s | < 3.5s | Lighthouse |
+| **TBT (Total Blocking Time)** | < 600ms | < 300ms | < 200ms | Lighthouse / Web Vitals |
 
 *Note on Initial JS Budget:* Measurements refer to compressed transfer size over the wire (gzip/brotli). A modern framework baseline (React 19 + Next.js App Router runtime) accounts for ~85–110KB gzipped, leaving approximately 190KB for application code, components, and third-party libraries in the Medium tier. Uncompressed parsed JavaScript in browser memory is typically 3–4× higher.
 

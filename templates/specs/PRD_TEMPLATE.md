@@ -21,11 +21,12 @@ What specific, painful problem does this project solve? Who experiences it, and 
 | User 1 | | | |
 | User 2 | | | |
 
-### 1.3 Success Criteria
-Measurable business and user outcomes that define success.
+### 1.3 Success Criteria & Business KPIs
+Measurable business, operational, and user outcomes that define success. Every metric must be verifiable via product telemetry, analytics, or automated CI reports:
 
-- [ ] Metric 1: (e.g. Reduce onboarding time from 15m to 2m)
-- [ ] Metric 2: (e.g. Zero critical security vulnerabilities at launch)
+- [ ] **Business KPI 1:** (e.g. Process 500 verified appointment bookings in Month 1 — tracked via database metrics)
+- [ ] **Operational SLA 2:** (e.g. p95 endpoint latency < 300ms, 99.9% uptime verified in Sentry/UptimeRobot)
+- [ ] **Quality & Security 3:** (e.g. Zero critical vulnerabilities in Semgrep SAST, 80%+ test coverage enforced in CI)
 
 ---
 

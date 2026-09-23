@@ -21,7 +21,12 @@
 **Run:**
 
 ```bash
-# Chrome DevTools
+# Option A: Headless CI / Automated Agent Execution (Zero GUI Required)
+npx playwright test tests/a11y.spec.ts  # Runs axe-core assertions across all routes
+# or via Lighthouse CLI:
+npx @lhci/cli autorun --collect.url=http://localhost:3000 --assert.assertions.categories:accessibility=0.85
+
+# Option B: Manual Local Check (Developer DevTools)
 1. Open page in Chrome
 2. F12 → Lighthouse tab
 3. Select "Accessibility" only

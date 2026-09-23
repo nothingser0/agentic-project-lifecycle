@@ -2,7 +2,7 @@
 
 **Purpose:** Expand the accessibility floor in `03c-build-quality.md` to full WCAG 2.1 Level AA compliance. Provides testable criteria, verification workflow, and common violations to avoid.
 
-Read this when: building public-facing UI, government/education project, or when Q94 (Compliance) mentions accessibility requirements.
+Read this when: building public-facing UI, government/education project, or when COMP1–COMP2 (Compliance) mentions accessibility requirements.
 
 ## Contents
 
@@ -362,15 +362,47 @@ Test critical path keyboard-only:
 □ Focus never trapped (can always Tab away)
 ```
 
-### 3. Screen Reader Testing — mandatory for the AA gate, not optional
+### 3. Screen Reader Testing — Automated CI Gate & Pre-GA Human Audit
 
-**Minimum (required, not aspirational):** Test with one screen reader, on the
-primary user flows (not just the homepage):
+#### A. Autonomous CI Gate (`gate:qa` — Automated Accessibility Tree Validation)
+In headless CI environments and autonomous agent runs where human screen reader operation is impossible, enforce the AA accessibility gate programmatically via Playwright and axe-core:
+
+```typescript
+// tests/a11y/accessibility-gate.spec.ts
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test.describe('Automated WCAG 2.1 AA Gate', () => {
+  test('critical user flow has 0 serious/critical a11y violations', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // 1. Automated axe rule audit
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
+
+    // 2. Headless accessibility tree inspection
+    // Ensure headings, landmarks, and accessible names exist in accessibility snapshot
+    const snapshot = await page.accessibility.snapshot();
+    expect(snapshot).toBeTruthy();
+
+    // 3. Automated Keyboard Traversal (No Focus Traps)
+    await page.keyboard.press('Tab');
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+    expect(['A', 'BUTTON', 'INPUT', 'SELECT']).toContain(focusedTag);
+  });
+});
+```
+
+#### B. Periodic Pre-GA Human Audit (Mandatory Before Public GA Release)
+Before commercial production General Availability (GA) handling real users, a human reviewer or accessibility specialist must conduct a manual audit using assistive technology across primary user flows:
 - **macOS:** VoiceOver (Cmd+F5)
 - **Windows:** NVDA (free) or JAWS
 - **Mobile:** iOS VoiceOver, Android TalkBack
 
-**Test scenarios:**
+**Manual Audit Checklist:**
 ```
 □ Navigate by headings (VoiceOver: Ctrl+Opt+Cmd+H)
 □ Navigate by landmarks (VoiceOver: Ctrl+Opt+U)

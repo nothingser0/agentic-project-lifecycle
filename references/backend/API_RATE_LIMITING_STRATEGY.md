@@ -21,7 +21,9 @@ range API, checked without ever sending the full password or a reversible hash o
 progressive friction after N failed attempts *per account* (not just per IP) — e.g.
 CAPTCHA after 3 failures, temporary account lock after 10 — or a bot-detection layer
 (Cloudflare Turnstile, Arkose) in front of the login endpoint. Rate limiting is the
-floor here, not the ceiling.
+floor here, not the ceiling. Pair with breach detection monitoring alerts in
+`references/security/COMPLIANCE_AUTOMATION_GUIDE.md` § Article 33 (>10 failures/hr globally
+or >5 failures/15 min per target account).
 
 **Applies to:** All tiers with API endpoints. Mandatory Medium+.
 
@@ -224,13 +226,13 @@ X-RateLimit-Reset: 1695384000
 
 ```
 HTTP/1.1 429 Too Many Requests
-Retry-After: 600
+Retry-After: 900
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1695384000
 
 {
-  "error": "Rate limit exceeded. Try again in 10 minutes."
+  "error": "Rate limit exceeded. Try again in 15 minutes."
 }
 ```
 
@@ -343,12 +345,14 @@ variable configuration (Vercel/AWS/whatever the project uses), so a bypass left 
 after a testing session cannot reach a deployed environment even if someone forgets to
 unset it manually:
 
-```bash
-# scripts/check-no-rate-limit-bypass.sh — run in CI before deploy
-if [ "$RATE_LIMIT_BYPASS" = "true" ] && [ "$DEPLOY_ENV" != "local" ]; then
-  echo "ERROR: RATE_LIMIT_BYPASS=true is set for a deployed environment. Aborting deploy."
-  exit 1
-fi
+```yaml
+# Add as a CI verification step before deploy in GitHub Actions / CI runner
+- name: Verify Rate Limit Bypass Disabled
+  run: |
+    if [ "$RATE_LIMIT_BYPASS" = "true" ] && [ "$DEPLOY_ENV" != "local" ]; then
+      echo "ERROR: RATE_LIMIT_BYPASS=true is set for a deployed environment. Aborting deploy."
+      exit 1
+    fi
 ```
 
 **Do not deploy bypass to production.**

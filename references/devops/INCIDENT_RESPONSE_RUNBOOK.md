@@ -8,14 +8,17 @@
 
 ## Incident Priority Levels
 
-| Priority | Impact | Response Time | Examples |
-|----------|--------|---------------|----------|
-| **P0 (Critical)** | Site down, data loss, security breach, payment processing failed | **15 minutes** | 503 errors, database unreachable, leaked credentials |
-| **P1 (High)** | Core feature broken, significant performance degradation | **1 hour** | Login broken, payroll generation fails, 50%+ error rate |
-| **P2 (Medium)** | Non-core feature broken, minor performance issue | **4 hours** | Export CSV broken, slow dashboard load, 5-10% error rate |
-| **P3 (Low)** | Cosmetic issue, minor bug | **Next business day** | Typo, misaligned button, chart rendering glitch |
+| Priority | Impact | First Response (Triage) | Mitigation Target | Final Fix Target | Examples |
+|----------|--------|-------------------------|-------------------|------------------|----------|
+| **P0 (Critical)** | Site down, data loss, security breach, payment failed | **≤ 15 minutes** | **≤ 1 hour** (rollback in ≤ 5m stateless / 15–30m stateful PITR) | **≤ 4 hours** | 503 errors, database unreachable, leaked credentials |
+| **P1 (High)** | Core feature broken, major performance degradation | **≤ 1 hour** | **≤ 4 hours** | **≤ 24 hours** | Login broken, payroll generation fails, 50%+ error rate |
+| **P2 (Medium)** | Non-core feature broken, minor performance issue | **≤ 4 hours** | **≤ 1 business day** | **≤ 1 week** | Export CSV broken, slow dashboard load, 5-10% error rate |
+| **P3 (Low)** | Cosmetic issue, minor bug | **≤ 1 business day** | **Next sprint** | **≤ 2 weeks** | Typo, misaligned button, chart rendering glitch |
 
-**"Response Time" here means total resolution time** (detection → triage → decision → fix or rollback → verification), which is why P0 is 15 minutes here but `references/devops/ROLLBACK_DEPLOYMENT_GUIDE.md`'s rollback decision matrix separately lists ≤5 minutes for P0 — that ≤5 min figure is only the mechanical rollback-execution step nested inside this 15-minute total. When quoting an SLA externally (status page, client comms), quote this file's total-resolution number, not the rollback guide's action-only number.
+**SLA Terminology Distinction:**
+- **First Response (Triage):** On-call paged, incident acknowledged, initial severity confirmed (P0 target: ≤15 min).
+- **Mitigation Target:** Bleeding stopped, service restored via rollback, failover, or feature flag (P0 target: 15–60 min total; mechanical rollback action itself is ≤5 min for stateless containers, or 15–30 min for stateful database PITR per `references/devops/ROLLBACK_DEPLOYMENT_GUIDE.md`).
+- **Final Fix Target:** Root cause permanently remediated, tested, and deployed (P0 target: ≤4 hours per `references/qa/BUG_PRIORITY_MATRIX.md`). Quote mitigation and final fix targets transparently when communicating externally.
 
 ---
 
@@ -323,6 +326,11 @@ Posted at: 11:15 WIB
 ## Post-Mortem Template
 
 **Create:** `docs/incidents/POST-MORTEM-YYYY-MM-DD.md`
+
+### 🛑 Mandatory Blameless Post-Mortem Principles
+1. **Focus on Systems, Not Individuals:** Never write "developer X was careless" or "engineer Y made a typo." Humans make mistakes when systems fail to protect them. The root cause must answer why CI, static analysis, review gates, or guardrails failed to prevent or catch the error.
+2. **No Named Individuals in Root Cause:** Never attribute fault to specific people in the Summary or Root Cause sections. Names appear only as role owners in the Timeline (factual observation) or Action Items (future accountability).
+3. **The 3-Whys Root Cause Method:** Dig past surface symptoms. Symptom: "N+1 query deployed" → Why? "Missing automated query count assertion in test" → Why? "Load test gate was not enforced for PRs altering ORM queries." That systemic failure is the real root cause (see `templates/closure/POST_MORTEM_TEMPLATE.md:65-69`).
 
 ```markdown
 # Post-Mortem: [Incident Title]

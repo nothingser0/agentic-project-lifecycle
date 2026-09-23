@@ -28,15 +28,21 @@
 
 ### Trigger: Compliance Selected
 
-**During Phase 1a (PRD), detect compliance keywords:**
+**During Phase 1a (PRD), detect compliance keywords (conceptual logic executed directly by the agent without external scripts per `SKILL.md:84-86`):**
 
 ```typescript
-// engine/compliance-detector.ts
+// Conceptual detection logic performed by the AI agent reading documents:
 
 const prd = readFile('docs/PRD.md')
+
+// Jurisdictional routing: do not assume US HIPAA for international projects
+const isUSMarket = prd.toLowerCase().includes('us') || prd.toLowerCase().includes('united states') || prd.toLowerCase().includes('hipaa');
+const isEUMarket = prd.toLowerCase().includes('eu') || prd.toLowerCase().includes('europe') || prd.toLowerCase().includes('gdpr');
+
 const keywords = {
   GDPR: ['EU', 'European', 'GDPR', 'personal data', 'privacy'],
-  HIPAA: ['health', 'medical', 'PHI', 'patient', 'HIPAA'],
+  HIPAA: isUSMarket ? ['health', 'medical', 'PHI', 'patient', 'HIPAA', 'clinic'] : ['HIPAA'],
+  GDPR_HEALTH: (!isUSMarket) ? ['health', 'medical', 'patient', 'clinic'] : [],
   SOC2: ['enterprise', 'audit', 'SOC 2', 'compliance', 'trust report'],
   PCIDSS: ['payment', 'credit card', 'PCI', 'card data'],
 }
@@ -177,10 +183,9 @@ Generating compliance checklists...
    - `erased_at`: ISO 8601 UTC timestamp
    - `request_id`: Audit confirmation identifier
 2. **Dedicated Out-of-Band Storage:** Store the tombstone log in a resilient, independently backed up store (e.g. S3 Object Lock in compliance mode, or dedicated audit database).
-3. **Mandatory Disaster Recovery Replay:** Integrate post-restore tombstone replay into `docs/operations/BACKUP-RESTORE.md` and `references/devops/DISASTER_RECOVERY_GUIDE.md`:
+3. **Mandatory Disaster Recovery Replay:** Integrate post-restore tombstone replay into `docs/operations/BACKUP-RESTORE.md` and `references/devops/DISASTER_RECOVERY_GUIDE.md`. Executed directly via SQL or script immediately after any database backup restoration before opening traffic:
    ```bash
-   # /opt/scripts/post-restore-gdpr-replay.sh
-   # Executed immediately after any database backup restoration before opening traffic
+   # Post-restore GDPR tombstone replay (executed directly or via CI/CD restore pipeline)
    echo "Replaying GDPR erasure tombstones against restored database..."
    psql $DATABASE_URL << 'EOF'
    DELETE FROM users WHERE id IN (
@@ -189,7 +194,7 @@ Generating compliance checklists...
    EOF
    echo "Restored database sanitized of erased accounts."
    ```
-4. **Traffic Gate:** Production health checks must block external traffic after a restore until `post-restore-gdpr-replay.sh` exits with code 0.
+4. **Traffic Gate:** Production health checks must block external traffic after a restore until the tombstone replay query exits with code 0.
 
 - [ ] **Data retention policy documented**
   - File: `docs/compliance/DATA_RETENTION_POLICY.md`
@@ -252,7 +257,7 @@ Generating compliance checklists...
 ## Article 33: Breach Notification
 
 - [ ] **Breach detection monitoring**
-  - [ ] Failed login alerts (> 10 failures in 1 hour)
+  - [ ] Failed login alerts (> 10 failures in 1 hour across multiple IPs, or > 5 failures in 15 min per target account — correlates with per-IP rate limiting in `references/backend/API_RATE_LIMITING_STRATEGY.md`)
   - [ ] Unusual data export volume alerts
   - [ ] Database access from unknown IPs
 
@@ -459,7 +464,7 @@ Generating compliance checklists...
 **Control effectiveness monitored:**
 
 - [ ] Quarterly security reviews (pen test, vulnerability scan)
-- [ ] Failed login monitoring (alert on > 10 failures/hour)
+- [ ] Failed login monitoring (alert on > 10 failures/hour globally or > 5 failures/15 min per target account)
 - [ ] Database access logs reviewed weekly
 - [ ] Code review checklist enforced on all PRs
 
@@ -663,22 +668,30 @@ Generating compliance checklists...
 | Data Type | Retention Period | Deletion Method |
 |-----------|------------------|------------------|
 | User accounts | Active + 3 years inactive | Hard delete (GDPR Article 17) |
-| Audit logs | 1 year | Automated deletion (cron job) |
+| Audit logs | 1 year (general) / 6 years (HIPAA ePHI statutory minimum per 45 CFR § 164.316(b)(2)) | Regime-aware automated deletion / S3 Object Lock immutable archive |
 | Payment records | 7 years (legal requirement) | Anonymize after user deletion |
 | Analytics events | 90 days | Roll up to aggregates, delete raw |
 | Error logs | 30 days | Automated deletion (Sentry retention) |
 
-**Automated deletion script:**
+**Automated deletion queries (run monthly via cron or pg_cron):**
 
 ```bash
-# /opt/scripts/data-retention.sh
-# Run monthly via cron
+# Automated retention cleanup (scheduled via cron, pg_cron, or cloud worker)
 
 # Delete inactive accounts (> 3 years no login)
 psql $DATABASE_URL -c "DELETE FROM users WHERE last_login_at < NOW() - INTERVAL '3 years';"
 
-# Delete old audit logs (> 1 year)
-psql $DATABASE_URL -c "DELETE FROM audit_logs WHERE created_at < NOW() - INTERVAL '1 year';"
+# Delete old audit logs (regime-aware retention: 1 year general, strictly 6 years for HIPAA ePHI)
+psql $DATABASE_URL -c "
+DELETE FROM audit_logs 
+WHERE created_at < NOW() - (
+  CASE 
+    WHEN regime = 'hipaa' OR EXISTS (SELECT 1 FROM compliance_settings WHERE standard = 'HIPAA') 
+      THEN INTERVAL '6 years' 
+    ELSE INTERVAL '1 year' 
+  END
+);
+"
 
 # Delete old analytics events (> 90 days)
 curl -X POST https://api.mixpanel.com/engage \
@@ -696,10 +709,10 @@ curl -X POST https://api.mixpanel.com/engage \
 
 ## Integration with Planning Phase
 
-**Update `modules/02a-planning-core-phases.md` § Phase 1a (PRD):**
+**Mapping in `modules/02b-planning-stack-setup.md` § Phase 5 (Capability Probes):**
 
 ```markdown
-### Q23 — Compliance Requirements
+### COMP1–COMP2 — Compliance Requirements
 
 > "Does this project have legal/compliance requirements?"
 
@@ -722,12 +735,16 @@ create docs/compliance/GDPR_CHECKLIST.md (see COMPLIANCE_AUTOMATION_GUIDE.md tem
 create docs/compliance/DATA_MAPPING.md
 create docs/compliance/DATA_RETENTION_POLICY.md
 
-# HIPAA selected → additional files
-create docs/compliance/HIPAA_CHECKLIST.md
-create docs/compliance/BAA_REGISTER.md (Business Associate Agreements)
+# HIPAA selected (US Health) → copy from templates
+create docs/compliance/HIPAA-CHECKLIST.md (from templates/specs/HIPAA_CHECKLIST_TEMPLATE.md)
+create docs/pm/BAA-REGISTER.md (from templates/pm/BAA_REGISTER_TEMPLATE.md)
+
+# GDPR Special Category Health Data (Non-US Health)
+create docs/compliance/GDPR_CHECKLIST.md (include Article 9 DPIA at docs/compliance/DPIA.md)
+create docs/compliance/DATA_MAPPING.md
 
 # SOC 2 selected → additional files
-create docs/compliance/SOC2_CHECKLIST.md
+create docs/compliance/SOC2_CHECKLIST.md (see COMPLIANCE_AUTOMATION_GUIDE.md template)
 create docs/security/RISK_ASSESSMENT.md
 ```
 

@@ -24,7 +24,7 @@ State the stack and fit reason in one short line before scaffolding: fast local 
 | Artifact | Runtime / framework | Persistence | API style | Auth |
 |---|---|---|---|---|
 | Web UI prototype | Vite + React + TypeScript | see persistence ladder | n/a | none until needed |
-| Full-stack web app | Next.js (App Router) + TypeScript, or repo framework | SQLite via local Prisma/Drizzle, Postgres at deploy | REST route handler | framework-native session auth library (Auth.js, Lucia, or framework-owned) |
+| Full-stack web app | Next.js (App Router) + TypeScript, or repo framework | SQLite via local Prisma/Drizzle, Postgres at deploy | REST route handler | framework-native session auth library (Auth.js, Better-Auth, or framework-owned) |
 | Standalone API | Node + Hono/Fastify + TypeScript, or Python + FastAPI | SQLite → Postgres | REST + route map or `contracts/openapi.yaml` | session or JWT via maintained library, no hand-rolled crypto |
 | CLI | Node + TypeScript, or Python + Typer, or Go | local file / SQLite | n/a | n/a |
 | Data / script | Python + stdlib + pandas only if tabular | file in, file out | n/a | n/a |
@@ -50,6 +50,7 @@ Choosing a rung does not change the complexity tier. See the anti-downgrade rule
 
 - Declare constraints at creation, not later: primary key, foreign key with explicit cascade or restrict behavior, unique constraint on anything the product considers unique, NOT NULL on anything the product requires, sensible defaults, and `created_at`.
 - Wrap multi-step writes in a transaction. Any operation that writes two rows and must not be half-complete (transfer, order plus line item, status change plus audit row) is one transaction, not two calls.
+- **Transactional Outbox for external side-effects:** When a database mutation triggers an external network call (sending transactional email, publishing webhook, queuing job, charging Stripe), NEVER make the external call inside or immediately after the DB transaction without persistence. Write an `outbox_events` record within the *same* database transaction. A resilient worker (BullMQ, Celery, pg_cron) polls the outbox and executes the external call using idempotency keys, marking the record processed upon success. This prevents dual-write split-brain when the DB commits but the external call fails (or vice versa).
 - Use migrations when the stack supports them. Name them `NNN_verb_noun`. Every migration is reversible or explicitly documented as not reversible. **Do not edit a migration that has been applied anywhere.** Add a new one.
 - Money is never float. Integer minor unit or decimal type.
 - Store timestamps in UTC.
@@ -63,7 +64,7 @@ Every outbound call gets: explicit timeout, one bounded retry with backoff only 
 
 **State:** local `useState` → lifted state → context for genuinely cross-cutting values (theme, session, locale) → store (Zustand or equivalent) only when three or more distant components write the same state. **Server data is not client state:** any project with more than two fetched endpoints uses a data-fetching library (TanStack Query, SWR, or the framework loader) instead of hand-rolled `useEffect` fetching.
 
-**Component split:** split when the file passes ~200 lines, when a piece is used in a second place, or when a subtree has its own independent state. Colocate a component with the only route that uses it until a second consumer appears. Props by default; context only for the cross-cutting values above. Do not build a generic component at its first use.
+**Component split:** split when pure component LOC exceeds 200 lines (excluding imports and types), when a component is imported in two or more distinct routes, or when an isolated subtree manages its own independent state. Colocate a component with the only route that uses it until a second consumer appears. Props by default; context only for the cross-cutting values above. Do not build a generic component at its first use.
 
 **Form:** one input does not need a library. Any form with validation rules, multiple fields, and a submit path uses the ecosystem-standard form + schema validation pair, and the same schema validates on the server.
 
@@ -71,7 +72,7 @@ Every outbound call gets: explicit timeout, one bounded retry with backoff only 
 
 ### Banned by default (review this list when revising the skill, last reviewed 2026-09)
 
-Do not use these unless the repo already uses them: Create React App, class components in new code, jQuery, hand-rolled Webpack config, `moment`, `request`, callback-style database client, Express 4 patterns in new projects, `var`, PHP mysql_* functions, `componentWillMount`, CSS float layout, Bootstrap 3, `any` as the default TypeScript escape hatch, rolling your own password hashing or JWT verification.
+Do not use these unless the repo already uses them: Create React App, class components in new code, jQuery, hand-rolled Webpack config, `moment`, `request`, callback-style database client, Express 4 patterns in new projects, `var`, PHP mysql_* functions, `componentWillMount`, CSS float layout, Bootstrap 3, `any` as the default TypeScript escape hatch, rolling your own password hashing or JWT verification, runtime CSS-in-JS (`styled-components`, `emotion`) in React Server Component / Next.js App Router projects (causes runtime SSR hydration mismatches, blocks streaming, and breaks strict Content Security Policy nonces without unsafe-inline; use Tailwind CSS, CSS Modules, or vanilla-extract instead).
 
 Reason: model training data over-represents these. Familiarity is not currency.
 
@@ -81,7 +82,7 @@ The banned list above is a floor, not a fix; it goes stale as training data goes
 
 ### Performance and support floor
 
-Unless the user says otherwise: latest evergreen browsers, no IE support, initial JS payload for prototype UI kept below roughly 300 KB gzipped, no route blocks first paint on a network call that could be streamed or deferred, and no unbounded list rendering past ~200 rows without virtualization or pagination. Measure before any optimization (`performance-optimization`).
+Unless the user says otherwise: latest evergreen browsers, no IE support, initial JS payload kept strictly below tier transfer budget (Medium: ≤ 300 KB gzipped, Large/Enterprise: ≤ 200 KB gzipped, enforced via Lighthouse CI and bundle analysis per `references/frontend/FRONTEND_PERFORMANCE_BUDGET.md`), no route blocks first paint on a network call that could be streamed or deferred, and no unbounded list rendering past ~200 rows without virtualization or pagination. Measure before any optimization (`performance-optimization`).
 
 ---
 
@@ -91,7 +92,7 @@ Vibe coding moves fast, not carelessly. Humans do not read code, so code protect
 
 - **Cheapest reliable guard.** Strict types when available, one smoke test for non-trivial behavior, and a real run of the critical path. If LSP is unavailable, use the project-native check (`npm run typecheck`, `npm test`, `npm run build`, `node --check`). Missing LSP is not a blocker when an equivalent check passes.
 - **Test depth follows risk.** Display-only UI and simple local tools: one smoke check. Add targeted checks when behavior can lose data, gate access, transform user input, or call an external service. Persistence can save/load/reset. Auth can login/logout/protected-route **plus one ownership-denial test**. API can success plus validation failure. Migration can apply/rollback or fresh-db.
-- **Non-trivial means:** persists, transforms, authorizes, charges, calls out, or has more than one step. If you are debating whether something qualifies, it qualifies.
+- **Non-trivial means (objective checklist):** Any function, route, or component that meets ANY of these six conditions: (1) executes database persistence or storage mutation, (2) transforms financial, mathematical, or tabular data, (3) validates or decodes external input against a schema, (4) authorizes an endpoint or inspects session/roles, (5) executes a network request to an external service or internal API, or (6) contains more than 1 conditional branching statement (`if/else`, `switch`, ternary). Every non-trivial slice requires at least one automated unit or integration test before being marked Done.
 - **No dead code.** Delete unused code after every iteration.
 - **Clear naming.** Self-explanatory even at high speed.
 - **Comments explain why, not what.**
@@ -105,7 +106,7 @@ Vibe coding moves fast, not carelessly. Humans do not read code, so code protect
 **Authentication (any tier with accounts):**
 - No plaintext or reversible password storage. Use framework or library defaults for hashing (bcrypt/argon2), not a hand-rolled scheme.
 - No client-only auth for anything deployed. Protect server routes, API handlers, and server actions, not only UI navigation.
-- Secure session framework defaults: httpOnly, secure, sameSite, sensible expiry.
+- Secure session framework defaults: `httpOnly: true`, `secure: true` (in production), `sameSite: 'lax'` (or `'strict'`), explicit session expiration: access token max 15 minutes, idle session timeout max 30 minutes, refresh token max 7 days with automatic refresh token rotation.
 - Rate limit authentication endpoints (login, signup, password reset, OTP).
 - Do not log tokens, passwords, session IDs, or personal data.
 
@@ -187,7 +188,7 @@ Keyboard-reachable controls, visible `:focus-visible` styling using `--color-foc
 
 **Verification, not aspiration:** before Product Finish Gate, run one automated a11y check (`axe` CLI, Lighthouse a11y, `eslint-plugin-jsx-a11y`, or stack equivalent) **and** one keyboard-only pass through the critical path: tab to every control, operate it, confirm focus is always visible and never trapped.
 
-**For WCAG 2.1 Level AA full compliance** (government/education/enterprise projects or when Q94 Compliance mentions accessibility), see `references/frontend/ACCESSIBILITY_WCAG_GUIDE.md` for the complete checklist, screen reader testing, and CI integration.
+**For WCAG 2.1 Level AA full compliance** (government/education/enterprise projects or when COMP1–COMP2 Compliance mentions accessibility), see `references/frontend/ACCESSIBILITY_WCAG_GUIDE.md` for the complete checklist, screen reader testing, and CI integration.
 
 ### UI state and responsiveness
 

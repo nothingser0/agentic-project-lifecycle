@@ -54,7 +54,8 @@ Used during the planning interview and project lifecycle governance:
 | `templates/specs/REQUIREMENT_SIGNOFF_LOG_TEMPLATE.md` | Phase 1a (QR8) | Stakeholder requirement signoff log |
 | `templates/specs/DESIGN_TEMPLATE.md` | Phase 4 | UI/UX design specification and token bridge |
 | `templates/specs/brand-questionnaire.md` | Phase 4 | Brand identity and visual direction questionnaire |
-| `templates/specs/INTEGRATION_CONTRACT_TEMPLATE.md` | Phase 5 | External integration agreements and payload specs |
+| `templates/specs/INTEGRATION_CONTRACT_TEMPLATE.md` | Phase 5 | External integration agreements and payload specs (`docs/misc/INTEGRATIONS.md`) |
+| `templates/specs/INTEGRATIONS_TEMPLATE.md` | Phase 5 | Alias for external integration contract template (`docs/misc/INTEGRATIONS.md`) |
 | `templates/specs/ADR_TEMPLATE.md` | On-demand | Architecture Decision Record with options and trade-offs |
 
 ---
@@ -66,6 +67,8 @@ Used during the planning interview and project lifecycle governance:
 | `templates/dev/DEVELOPER_ONBOARDING_TEMPLATE.md` | Phase 6 (QD2) | 10-minute developer onboarding runbook (`docs/dev-docs/ONBOARDING.md`) |
 | `templates/dev/CONVENTIONS_TEMPLATE.md` | Phase 6 | Project code conventions, directory layout, and git standards (`CONVENTIONS.md`) |
 | `templates/dev/RUNBOOK_LOCAL_TEMPLATE.md` | Phase 6 | Local development runbook and troubleshooting |
+| `templates/dev/BREAK_GLASS_RUNBOOK_TEMPLATE.md` | Phase 5/6 (Operations) | Clinical and SRE emergency break-glass procedure (`docs/operations/BREAK_GLASS_RUNBOOK.md`) |
+| `templates/dev/BREACH_RESPONSE_PLAN_TEMPLATE.md` | Phase 5/6 (Operations) | Data breach incident response and regulatory notification SOP (`docs/operations/BREACH_RESPONSE_PLAN.md`) |
 | `templates/dev/AGENT_PROMPTS_TEMPLATE.md` | Phase 6 | Multi-agent execution prompt definitions |
 | `templates/dev/DELIVERY_GATE_TEMPLATE.md` | Phase 6 | Gate verification checklist and evidence record |
 

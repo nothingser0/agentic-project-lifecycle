@@ -39,10 +39,12 @@ A "yes" here is a **product criterion**, not a team-size criterion — see the t
 | Situation | Verdict | Why |
 |---|---|---|
 | Email marketing list (name + email only, no health/financial/government data) | **No** (unless GDPR/CCPA applies due to EU/CA users — ask "do you have users in the EU or California?" if unsure) | Personal data exists but carries no domain-specific compliance regime by default |
+| Healthcare appointment scheduling or clinic intake (patient name + doctor/clinic/date, even without clinical notes or EHR records) | **Yes** (HIPAA / health data override) | Under HIPAA and international health privacy laws, linking an identifiable individual to a healthcare provider, specialty, or clinic appointment is legally Protected Health Information (PHI). Scheduling cannot be downgraded to non-regulated. |
 | Site analytics / browsing history tied to a user ID | **No** by default, **Yes** if the product's own privacy policy or a client contract commits to a specific data-protection standard | The data type alone doesn't trigger regulation; a stated obligation does |
 | Internal HR system storing employee salary/SSN/tax ID | **Yes** | Employee PII with financial/government identifiers is regulated data even for an internal, non-client-facing tool |
 | A freelancer's own invoicing tool storing their clients' payment details | **Yes** if card/bank details are stored directly; **No** if payment is fully delegated to a processor (Stripe, PayPal) and never touches this system's database | The determining fact is whether *this system* handles/stores the regulated data, not just facilitates a transaction |
-| "We might add health data later, not now" | **No** for the current build, but record `regulated_data_planned: true` in `CONTEXT.md` and re-ask this question at the Step 8 scope re-check trigger for new entities | Don't pre-classify for a feature that doesn't exist yet — but don't lose the fact that it was flagged |
+| Early-stage MVP, prototype, or "proof-of-concept" handling healthcare, patient, or financial entities ("we'll add compliance later") | **Yes** (Compliance override applies immediately) | Prototype status never exempts a project from compliance classification if schemas or data pipelines touch regulated data. Deferring compliance until post-build creates untracked liability. Lean teams must use the **Regulated MVP Fast-Track Profile** (Step 3), not downgrade to Small/Medium or skip planning. |
+| Non-healthcare product saying "We might add health/regulated data later, not now" (e.g. general calendar tool considering healthcare clients in v2) | **No** for the current build, but record `regulated_data_planned: true` in `CONTEXT.md` and re-ask this question at the Step 8 scope re-check trigger for new entities | Don't pre-classify for a feature that doesn't exist yet — but don't lose the fact that it was flagged |
 
 If a case genuinely doesn't match any row above, default to asking the user directly whether a named regulation, audit, or contract clause applies — do not guess silently in either direction.
 
@@ -56,14 +58,20 @@ From both answers, classify based on the table below. Do not ask more than these
 
 | Tier | Product criteria (any ONE is sufficient) | Typical team (informational only — does not gate the tier) | Example |
 |------|------------------|------|---------|
-| **Small** | 1 user-visible feature, 1 entity, no auth, no external service, no deploy | Solo, personal | CLI tool, automation script, personal widget |
-| **Medium** | One of: 3+ features, 2+ related entities, has auth, has external call, has deploy target, has export/reporting | 1–5 people | Internal SaaS, booking system, team dashboard |
-| **Large** | One of: multi-role auth, payments, **regulated data** (see Step 2 follow-up), public API contract, concurrent multi-user, long-lived production | 5–20 people | Public platform, marketplace, integrated system |
-| **Enterprise** | One of: 21+ devs, **formal compliance obligation** (healthcare/fintech/gov — HIPAA, PCI-DSS, SOC 2, government data-handling requirement), contract SLA, multi-team delivery, client-facing contract | 20+ people | Core banking, hospital system, government portal |
+| **Small** | 1 user-visible feature, 1 entity, no auth, no external service, no deploy, single-script file ETL | Solo, personal | CLI tool, automation script, personal widget |
+| **Medium** | One of: 3+ features, 2+ related entities, has auth, has external call, has deploy target, has export/reporting, multi-table batch ETL or API ingestion | 1–5 people | Internal SaaS, booking system, scheduled data pipeline |
+| **Large** | One of: multi-role auth, payments, **regulated data** (see Step 2 follow-up), public API contract, concurrent multi-user, analytical data warehouse, custom ML model integration | 5–20 people | Public platform, marketplace, AI analytics platform |
+| **Enterprise** | One of: 21+ devs, **formal compliance obligation** (healthcare/fintech/gov — HIPAA, PCI-DSS, SOC 2, government data-handling requirement), **safety-critical / embedded / medical device / robotics systems** (life-safety hazard analysis required), contract SLA, multi-team delivery, client-facing contract, distributed data platform / critical AI pipeline | 20+ people | Core banking, hospital system, enterprise ML platform, medical device controller |
 
-**Regulated-data / compliance override (reads together with Step 2's follow-up question):**
+**Data & ML Engineering Deliverable Profile:**
+If the primary deliverable is a Data Pipeline / Analytical Store / ML Model (rather than a CRUD web app), the product criteria apply identically: single-script file ETL is Small; multi-table batch ETL or API ingestion is Medium (`references/data/DATA_PIPELINE_GUIDE.md`); analytical warehouse with dbt quality gates or custom ML eval harness is Large (`references/ai/MODEL_EVALUATION_GUIDE.md`). Record `deliverable_type: [web_app | api_service | data_pipeline | ml_model]` in `CONTEXT.md`.
+
+**Regulated-data, Safety-critical & Compliance override (reads together with Step 2's follow-up question):**
+- Domain criteria take absolute precedence over delivery format: a single-script file or CLI script that touches health records or financial entities is Large or Enterprise, never Small.
+- Any software controlling physical hardware, medical devices, robotics, or life-safety critical operations is strictly **Enterprise** regardless of team size.
 - Any "yes" to the Step 2 regulated-data follow-up means the product criteria for **at least Large** are already met ("regulated data"), regardless of team size — a solo developer building a HIPAA-scoped clinic tool is Large, not Small/Medium.
 - If the regulated data carries a **formal compliance obligation** (a named regulation, an audit requirement, or a contractual compliance clause — not just "this data is sensitive"), the product criteria for **Enterprise** are met ("compliance (healthcare/fintech/gov)"), regardless of team size — a 2-person team building a HIPAA-audited system is Enterprise for gating purposes (Full planning mode, all compliance/security gates), even though the "20+ people" team example does not apply to them.
+- **Regulated Data Planning Policy:** Any project assigned Large or Enterprise due to regulated data, statutory compliance, or safety-critical scope (`tier_basis: compliance_override` or handling PHI/PII/PCI) **cannot skip planning**. The skip policy in `engine/PROJECT-PROFILE.md` is strictly `block until complete` for all regulated data workloads.
 - Record which override applied in `CONTEXT.md` as `tier_basis: [team_size | product_criteria | compliance_override]` (see Step 7) so later sessions know *why* the tier was assigned, not just what it is.
 
 **Anti-downgrade rules — cannot downgrade tier due to implementation choice:**
@@ -91,7 +99,7 @@ Planning mode is only relevant if tier is Medium or above (used in `02-planning-
 | Tier | Default planning mode | Phase executed |
 |------|------------------------|----------------|
 | Small | n/a (always skip planning) | Directly to BUILD |
-| Medium | **Lightweight** | Short Phase 0 + Phase 1a + Phase 2a + Phase 6 |
+| Medium | **Lightweight** | Short Phase 0 + Phase 1a + Phase 2a + Phase 3 (Tech Stack) + Phase 6 (Build Setup) |
 | Large | **Standard** | Phase 0 → 1a → 1 → 2 → 2a → 3 → 5 (relevant probe) → 6 |
 | Enterprise | **Full** | All phases, all gates, all capability folders |
 
@@ -101,6 +109,11 @@ If a project is classified as Enterprise *solely* due to a statutory compliance 
 - **Non-negotiable compliance floor preserved:** All Phase 5 Security (Q34–Q39b) and Compliance (COMP1–COMP2) deep-dives, encryption, audit logging, BAA tracking, and ownership negative tests remain **blocking**.
 - **Pruned overhead:** Multi-team corporate governance (enterprise RACI, departmental budget tracking, steering committee agendas) is reduced to startup equivalents (`STAKEHOLDERS.md`, single-tier charter).
 - Record in `CONTEXT.md`: `planning_mode: Standard`, `regulated_mvp_track: true`.
+
+**Scope vs. Timeline Feasibility Guardrail:**
+If a project is assigned Large or Enterprise, has a team size $\le 6$ developers, and a requested timeline $<8$ weeks (e.g. "6-week MVP for healthcare app"):
+- The agent **must proactively surface the feasibility conflict** before starting planning:
+  > *"Notice: You have requested an MVP in [X] weeks that qualifies as [Large/Enterprise] due to [regulated data/compliance/scale]. Full enterprise scope cannot be delivered in this timeframe without severe compromise. We must select one trade-off: (1) Use the Regulated MVP Fast-Track Profile to preserve security/compliance gates while pruning governance, (2) Cut scope to non-regulated mock data for v1, or (3) Extend the target delivery timeline."*
 
 User can request upgrade mode (e.g. Medium but wants Full planning) — record as `planning_mode_override: user_requested`.
 

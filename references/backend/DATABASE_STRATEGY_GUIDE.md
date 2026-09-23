@@ -130,6 +130,8 @@ ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") 
 **Check for:**
 
 - [ ] No data loss (e.g., dropping column without backup)
+- [ ] Indexes created concurrently (`CREATE INDEX CONCURRENTLY`) on production tables
+- [ ] Strict lock timeout configured (`SET lock_timeout = '2s';`) at top of DDL script
 - [ ] Indexes on foreign keys (performance)
 - [ ] `onDelete` behavior correct (CASCADE vs. RESTRICT vs. SET NULL)
 - [ ] Default values safe for existing rows
@@ -242,56 +244,135 @@ UPDATE "User" SET "role" = 'user' WHERE "role" IS NULL;
 ALTER TABLE "User" ALTER COLUMN "role" SET NOT NULL;
 ```
 
-### Rule 3: Rename via Alias (Zero Downtime)
+### Rule 3: 4-Phase Expand-Contract Migration Pattern (Zero-Downtime Renames & Drops)
 
-**Bad (breaks running app):**
+Directly renaming or dropping a database column causes immediate 500 errors during rolling deployments: running application instances reading the old column name crash as soon as the migration executes, and old code cannot write to the new column.
 
-```sql
-ALTER TABLE "User" RENAME COLUMN "name" TO "fullName";
--- Old code reading "name" crashes immediately
+To achieve 100% zero downtime, execute every column rename, type conversion, or column split across **four distinct deployment phases**:
+
+```text
+Phase 1: EXPAND           Phase 2: BACKFILL         Phase 3: SWITCH READS     Phase 4: CONTRACT
+Add new column nullable   Copy existing data        App reads new column      Stop dual writes
+Deploy dual-write code    in safe batches           Old column now unread     Drop old column
 ```
 
-**Good (three-phase):**
+#### Phase 1: Expand (Add Column & Dual-Write)
+1. **Database Migration:** Add the new column as `NULLABLE` (do not add NOT NULL yet) with a lock timeout:
+   ```sql
+   -- migration_01_expand.sql
+   SET lock_timeout = '2s';
+   ALTER TABLE "User" ADD COLUMN "fullName" TEXT;
+   ```
+2. **Application Code (Deploy v1):** Update models to write to **both** columns simultaneously, while still reading from the old column:
+   ```typescript
+   // app/api/users/route.ts (v1)
+   export async function createUser(data: UserInput) {
+     return db.user.create({
+       data: {
+         name: data.name,      // Old column (primary read source)
+         fullName: data.name,  // New column (dual write for new rows)
+         email: data.email
+       }
+     });
+   }
+   ```
 
-**Phase 1: Add new column, copy data**
-
-```sql
-ALTER TABLE "User" ADD COLUMN "fullName" TEXT;
-UPDATE "User" SET "fullName" = "name";
-```
-
-**Phase 2: Deploy code reading both columns (fallback to old)**
-
+#### Phase 2: Backfill Historical Rows (Background Script)
+Never run a single monolithic `UPDATE "User" SET "fullName" = "name"` on tables with >10,000 rows — it locks the entire table and causes replication lag. Backfill in indexed primary-key chunks:
 ```typescript
-const name = user.fullName || user.name;
+// scripts/backfill-user-fullname.ts
+async function backfillFullName() {
+  const BATCH_SIZE = 500;
+  let lastId = 0;
+  let updated = 0;
+
+  while (true) {
+    const batch = await db.user.findMany({
+      where: { id: { gt: lastId }, fullName: null },
+      select: { id: true, name: true },
+      orderBy: { id: 'asc' },
+      take: BATCH_SIZE,
+    });
+
+    if (batch.length === 0) break;
+
+    for (const user of batch) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { fullName: user.name },
+      });
+    }
+
+    lastId = batch[batch.length - 1].id;
+    updated += batch.length;
+    await new Promise((r) => setTimeout(r, 50)); // Throttling: yield to user traffic
+  }
+  console.log(`Backfill complete: ${updated} rows updated.`);
+}
 ```
 
-**Phase 3: Drop old column after all instances updated**
+#### Phase 3: Switch Reads to New Column (Deploy v2)
+Once backfill script completes with 0 remaining nulls:
+1. Update application code to read from `fullName` with a fallback:
+   ```typescript
+   // app/api/users/route.ts (v2)
+   const displayName = user.fullName ?? user.name;
+   ```
+2. If `fullName` is required, add the `NOT NULL` constraint safely:
+   ```sql
+   -- migration_02_add_constraint.sql
+   SET lock_timeout = '2s';
+   ALTER TABLE "User" ALTER COLUMN "fullName" SET NOT NULL;
+   ```
+3. Deploy v2 across all instances and background worker queues. Monitor for 24–48 hours to confirm zero dependencies on `name`.
 
-```sql
-ALTER TABLE "User" DROP COLUMN "name";
-```
+#### Phase 4: Contract (Remove Dual-Write & Drop Old Column)
+1. **Application Code (Deploy v3):** Remove all references to the old `name` column from application code, ORM schemas (Prisma/Drizzle), and workers.
+2. **Worker Drain:** Ensure all in-flight queues processing v2 payloads have drained.
+3. **Database Migration:** Drop the old column:
+   ```sql
+   -- migration_03_contract.sql
+   SET lock_timeout = '2s';
+   ALTER TABLE "User" DROP COLUMN "name";
+   ```
+*(Result: Zero downtime, zero lock contention, zero data loss, fully auditable).*
 
-### Rule 4: Index Before Foreign Key (Large Tables)
+### Rule 4: DDL Concurrency & Lock Outage Prevention (PostgreSQL)
 
-**Bad (locks table during FK creation):**
+**The Failure Mode:** Any `ALTER TABLE` or standard `CREATE INDEX` in PostgreSQL acquires an `ACCESS EXCLUSIVE` or `SHARE` lock on the target table. While waiting for long-running read queries to finish, the migration blocks behind them, and **all subsequent read/write queries queue behind the migration**. Within seconds, database connection pools (PgBouncer, Prisma) are exhausted and the entire application goes down.
 
-```sql
-ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" 
-  FOREIGN KEY ("authorId") REFERENCES "User"("id");
--- On 10M rows, this locks table for minutes
-```
+**Mandatory Safeguards for All Production Migrations:**
 
-**Good (index first):**
+1. **Always Set Lock Timeouts First:**
+   Prepend every migration script or migration runner session with a strict lock timeout. If the lock cannot be acquired within 2 seconds, fail immediately rather than queuing traffic:
+   ```sql
+   -- Top of migration file:
+   SET lock_timeout = '2s';
+   SET statement_timeout = '30s';
+   ```
 
-```sql
--- Add index first (concurrent, no lock)
-CREATE INDEX CONCURRENTLY "Post_authorId_idx" ON "Post"("authorId");
+2. **Always Create Indexes Concurrently:**
+   Standard `CREATE INDEX` locks table writes for the entire duration of the index build. Always use `CONCURRENTLY` (which runs outside a transaction block):
+   ```sql
+   -- Run outside transaction (in Prisma: use custom migration or execute raw SQL outside transaction)
+   CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_appointments_patient_id" 
+   ON "appointments"("patient_id");
+   ```
 
--- Then add FK (faster with index)
-ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" 
-  FOREIGN KEY ("authorId") REFERENCES "User"("id");
-```
+3. **Index Before Foreign Key (Large Tables):**
+   Adding a Foreign Key constraint checks existing rows and acquires a lock. Always create the index concurrently first, then add the constraint:
+   ```sql
+   -- Step 1: Add index concurrently without locking writes
+   CREATE INDEX CONCURRENTLY IF NOT EXISTS "Post_authorId_idx" ON "Post"("authorId");
+
+   -- Step 2: Add FK constraint using the existing index (fast validation)
+   SET lock_timeout = '2s';
+   ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" 
+     FOREIGN KEY ("authorId") REFERENCES "User"("id");
+   ```
+
+4. **Never Add a NOT NULL Column without a Constant Default on Postgres < 11:**
+   In modern Postgres (11+), adding a column with a constant default (`DEFAULT 'active' NOT NULL`) is metadata-only and instant. However, using a volatile function (`DEFAULT now()`) or backfilling in the same transaction forces a full table rewrite while holding an exclusive lock. Always add nullable, backfill in batches, then `ALTER COLUMN SET NOT NULL`.
 
 ### Rule 5: Background Workers & Long-Running Jobs Schema Sync
 
@@ -304,18 +385,60 @@ In asynchronous worker systems (BullMQ, Celery, Sidekiq, Temporal), background j
    - Verify job failure rate in monitoring is 0%.
    - Only then apply the final contract drop migration.
 
+### Rule 6: Transactional Outbox Pattern (Dual-Write Prevention)
+
+**Problem:** An application commits a database transaction (e.g. creating an order, registering an appointment) and then immediately attempts to make an external network call (charging Stripe, sending an SMS/email, publishing to Kafka/RabbitMQ/BullMQ).
+- If the network call times out or throws, the database has already committed, resulting in orphaned state.
+- If the database commit fails after the external call, the customer is charged or notified for an entity that does not exist.
+
+**Solution:** Write external events to an `outbox_events` table inside the *same* local database transaction:
+
+```sql
+-- Outbox table schema
+CREATE TABLE outbox_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  aggregate_type TEXT NOT NULL,
+  aggregate_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  retry_count INT NOT NULL DEFAULT 0,
+  last_error TEXT
+);
+CREATE INDEX idx_outbox_unprocessed ON outbox_events (created_at) WHERE processed_at IS NULL;
+```
+
+**Atomic Transaction:**
+```typescript
+await prisma.$transaction(async (tx) => {
+  // 1. Mutate application entity
+  const booking = await tx.booking.create({ data: bookingData });
+  
+  // 2. Persist side-effect to outbox (guaranteed atomic with booking)
+  await tx.outboxEvent.create({
+    data: {
+      aggregateType: 'Booking',
+      aggregateId: booking.id,
+      eventType: 'BookingConfirmed',
+      payload: { bookingId: booking.id, patientId: booking.patientId, email: booking.patientEmail },
+    }
+  });
+});
+```
+
+**Relay Worker:**
+A separate worker or cron process reads unprocessed outbox rows, sends the external notification with an idempotency key (`idempotency_key = outbox_event.id`), and marks `processed_at = NOW()`. If the worker crashes, it safely retries without data loss.
+
 ---
 
 ## Backup & Restore
 
 ### Automated Backup (PostgreSQL)
 
-**Daily backup script:**
+**Daily backup procedure (run as cron task or container job):**
 
 ```bash
-#!/bin/bash
-# /opt/scripts/backup-db.sh
-
 set -e
 
 DB_NAME="myapp"
@@ -395,11 +518,12 @@ sudo systemctl start postgresql
 
 1. [ ] Download latest backup from S3
 2. [ ] Restore to temporary database
-3. [ ] Run smoke tests (check row counts, critical records exist)
-4. [ ] Time the restore (document in runbook)
-5. [ ] Verify data integrity (no corruption)
-6. [ ] Document any issues found
-7. [ ] Update restore runbook with learnings
+3. [ ] **Replay GDPR/CCPA erasure tombstones** (MANDATORY if handling personal data — see `references/security/COMPLIANCE_AUTOMATION_GUIDE.md` § Erasure Tombstone Replay Pattern). Run the post-restore erasure tombstone replay query to purge resurrected records before certifying restore.
+4. [ ] Run smoke tests (check row counts, critical records exist)
+5. [ ] Time the restore (document in runbook)
+6. [ ] Verify data integrity (no corruption, no resurrected erased users)
+7. [ ] Document any issues found
+8. [ ] Update restore runbook with learnings
 
 **Smoke test script:**
 
@@ -635,7 +759,7 @@ WHERE u.id IS NULL;
 | Data Type | Retention | Deletion Method |
 |-----------|-----------|------------------|
 | **User account** | Active + 3 years inactive | Hard delete (GDPR right to erasure) |
-| **Audit logs** | 1 year | Archive to cold storage, then delete |
+| **Audit logs** | 1 year (general) / 6 years (HIPAA ePHI per 45 CFR § 164.316(b)(2)) | Archive to immutable cold storage (S3 Object Lock), never purge HIPAA audit trails |
 | **Payment records** | 7 years (legal requirement) | Anonymize after user deletion |
 | **Analytics events** | 90 days | Roll up to aggregates, delete raw events |
 
@@ -838,25 +962,25 @@ total_connections = 9 * 10 = 90 (within 100 max)
 - Data retention policy documented (GDPR compliance)
 ```
 
-**Update Phase 6 (Build Setup):**
+**Mapping in Phase 3 (Architecture) & Phase 5 (DevOps):**
 
 ```markdown
-### Q63b — Database Strategy
+### Q18 & Q50a/c — Database & Backup Strategy
 
-> "What database are you using, and what's the backup strategy?"
+> "What database are you using, and what's the migration and backup strategy?"
 
 Options:
 - PostgreSQL / MySQL / MongoDB / SQLite / Supabase / Planetscale
 
 Sub-questions:
-- Q63b-i: Migration tool? (Prisma Migrate / Flyway / Liquibase / Django Migrations)
-- Q63b-ii: Backup frequency? (Daily / Hourly / Continuous PITR)
-- Q63b-iii: Backup storage? (Local / S3 / Cross-region)
-- Q63b-iv: Last restore drill? (Never / > 6 months ago / < 3 months ago)
+- Q50a: Migration tool? (Prisma Migrate / Flyway / Liquibase / Django Migrations)
+- Q50c: Backup frequency? (Daily / Hourly / Continuous PITR)
+- Q50c-i: Backup storage? (Local / S3 / Cross-region)
+- Q50c-ii: Last restore drill? (Never / > 6 months ago / < 3 months ago)
 
 **Output files:**
 - `docs/dev-docs/DATABASE.md` (connection, migrations, backup runbook)
-- `/opt/scripts/backup-db.sh` (automated backup script)
+- `docs/operations/BACKUP-RESTORE.md` (automated backup procedures)
 ```
 
 ---

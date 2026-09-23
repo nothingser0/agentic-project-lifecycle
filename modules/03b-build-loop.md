@@ -71,12 +71,12 @@ The first implementation item must include hard gates: git init/status, `.gitign
 
 > "Done: auth, dashboard. Building: employee CRUD. Queued: role-based nav. Added this session: CSV export (pushed role-based nav to next)."
 
-**Schedule health check (Medium+):** setiap 3 milestone selesai, atau setiap kali milestone slip, jalankan health check dari `references/pm/SCHEDULE_HEALTH_GUIDE.md` dan tambahkan hasilnya ke ledger:
+**Schedule health check (Medium+):** every 3 completed milestones, or whenever a milestone slips, run the health check from `references/pm/SCHEDULE_HEALTH_GUIDE.md` and record the result in the ledger:
 
 > "Schedule health: 🟢 On track (0 slipped milestones)"
-> "Schedule health: 🟡 AT RISK — M2 +2 hari, M3 +3 hari — sudah surface ke user, user pilih defer CSV export"
+> "Schedule health: 🟡 AT RISK — M2 +2 days, M3 +3 days — surfaced to user, user chose to defer CSV export"
 
-Jika status 🔴 Off Track: stop build, buat CR, jangan lanjut sampai disetujui.
+If status is 🔴 Off Track: stop build, create a Change Request (`templates/pm/CHANGE_REQUEST_TEMPLATE.md`), and do not proceed until approved.
 
 ### Build Loop
 
@@ -168,14 +168,15 @@ Option 3 is allowed. Saying nothing is not. Do not present only a URL as proof t
 | User says | You do |
 |---|---|
 | "I don't like it" | One question: "The layout, the colors, or the overall vibe?" |
-| "Bikin lebih pop" | Increase contrast, add accents, sharpen hierarchy |
-| "Terlalu rame" | Reduce noise: fewer colors, less decoration, more whitespace |
+| "Make it pop more" | Increase contrast, add accents, sharpen hierarchy |
+| "Too busy/cluttered" | Reduce noise: fewer colors, less decoration, more whitespace |
 | "Not that vibe" | Do not defend. Offer one direction: "More minimal, more playful, or more premium?" |
-| "Bikin kayak [app]" | Borrow density, navigation, energy. Do not copy branding or assets. |
-| "Bisa X juga?" | Scope addition, apply Phase 2 rules, update ledger line |
-| "Balikin" | Revert to last working state (git stash/checkpoint, or save previous file version) |
-| "Sempurna, lanjut" | Mark Done in `TASKS.md` only if the acceptance criterion was actually run. Move to the next queued item. |
-| "Mulai ulang" | Pivot Handling, rerun Rule 0 |
+| "Make it like [app]" | Borrow density, navigation, energy. Do not copy branding or assets. |
+| "Can we also do X?" | Scope addition, apply Phase 2 rules, update ledger line |
+| "Revert it" | Revert to last working state (git stash/checkpoint, or save previous file version) |
+| "Looks good, proceed" | Mark Done in `TASKS.md` only if the acceptance criterion was actually run. Move to the next queued item. |
+| "Start over" | Pivot Handling, rerun Rule 0 |
+| "Deploy this" | Deployment Flow |
 | "Ship" | Closing Ceremony |
 
 ---
@@ -211,7 +212,6 @@ Consult Oracle (read-only high-IQ reasoning agent) when ANY of these apply:
 - Security vulnerability with unclear remediation path
 
 **Do not** escalate to Oracle for: syntax errors, missing imports, typos, or issues solvable by reading error messages.
-| "Deploy ini" | Deployment Flow |
 
 Unsafe, destructive, deceptive, or illegal requests: refuse that part briefly, offer the nearest safe implementation.
 

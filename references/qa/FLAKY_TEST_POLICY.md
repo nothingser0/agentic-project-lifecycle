@@ -142,7 +142,10 @@ This test is now skipped in CI. PR merges are NOT blocked by it.
 
 ## Fixing Quarantined Tests
 
-**Rule:** Quarantined tests MUST be fixed within 14 days or deleted.
+**Rule:** Quarantined tests MUST be fixed within 14 days or permanently deleted.
+- **Mandatory Deletion Prerequisite:** Deleting a quarantined test is strictly forbidden if doing so leaves critical business logic uncovered or causes overall test coverage to drop below the mandatory 80% line/statement and 75% branch thresholds (or 100% on payment/auth paths).
+- **Compensating Test Requirement:** Before any quarantined E2E or integration test may be deleted, the author must commit a fast, deterministic unit or integration test exercising the same business rules.
+- **Audit Logging:** Any test deletion must be recorded in `__tests__/QUARANTINED_TESTS.md` with the reason for deletion, compensating test path, and approving lead.
 
 ### Fix Workflow
 
@@ -323,24 +326,72 @@ Fixed in #789
 
 ---
 
-## Quarantine Expiration (14 Days)
+## Quarantine Expiration (14 Days) & Automated CI Gate
 
-**Rule:** If test not fixed within 14 days → DELETE it.
+**Rule:** If a test is not fixed within 14 days of being quarantined, it MUST be remediated or deleted.
 
-**Why delete?**
+**Why strictly enforce expiration?**
+- A quarantined test (`test.skip`) provides zero test value while adding code noise.
+- Without automated enforcement, teams accumulate dozens of skipped tests that rot over time.
+- Forces an active decision: fix the underlying flakiness, replace with a fast unit test, or explicitly delete.
 
-- Quarantined test provides zero value (it's skipped)
-- Keeping it gives false sense of coverage
-- Forces team to decide: fix it or admit we don't need it
+### Automated CI Quarantine Audit (GitHub Actions)
 
-**Deletion process:**
+Add this workflow to fail CI if any quarantined test remains unaddressed past its 14-day SLA:
+
+```yaml
+# .github/workflows/quarantine-audit.yml
+name: Quarantined Tests Audit
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 1' # Every Monday at midnight
+
+jobs:
+  audit-quarantine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Quarantined Test SLA
+        run: |
+          if [ ! -f "__tests__/QUARANTINED_TESTS.md" ]; then
+            echo "No quarantined tests log found."
+            exit 0
+          fi
+
+          EXPIRED_FOUND=0
+          CURRENT_DATE=$(date +%s)
+
+          # Parse dates in QUARANTINED_TESTS.md table (Format: YYYY-MM-DD)
+          grep -E '^\| `.*` \| [0-9]{4}-[0-9]{2}-[0-9]{2} \|' __tests__/QUARANTINED_TESTS.md | while read -r line; do
+            TEST_NAME=$(echo "$line" | awk -F'|' '{print $2}' | xargs)
+            QUARANTINE_DATE=$(echo "$line" | awk -F'|' '{print $3}' | xargs)
+            Q_SEC=$(date -d "$QUARANTINE_DATE" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$QUARANTINE_DATE" +%s)
+            AGE_DAYS=$(( (CURRENT_DATE - Q_SEC) / 86400 ))
+
+            if [ $AGE_DAYS -gt 14 ]; then
+              echo "❌ ERROR: Quarantined test '$TEST_NAME' has been skipped for $AGE_DAYS days (SLA: 14 days max)." >&2
+              EXPIRED_FOUND=1
+            fi
+          done
+
+          if [ $EXPIRED_FOUND -eq 1 ]; then
+            echo "❌ CI FAILED: Found expired quarantined tests. Fix or delete them before merging." >&2
+            exit 1
+          fi
+          echo "✅ All quarantined tests are within the 14-day SLA window."
+```
+
+**Deletion process (when expired):**
 
 ```bash
 # Delete test file (if entire file quarantined)
 git rm __tests__/integration/api-employees.test.ts
 
-# OR comment out test (if only 1 test in file quarantined)
-# test.skip('...') → Delete entire test block
+# OR delete the test block (if single test in file)
+# test.skip('...') → Remove the entire test block from the file
 ```
 
 **Notify team:**

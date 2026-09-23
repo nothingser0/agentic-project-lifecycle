@@ -34,14 +34,20 @@ on:
   pull_request:
     branches: [main, production]
 
+# Principle of least privilege: block token write access by default
+permissions:
+  contents: read
+
 jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Supply Chain Hardening: Pin third-party GitHub Actions to immutable full commit SHAs
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       
-      - name: SAST Scan
-        uses: github/codeql-action/analyze@v3
+      - name: SAST Scan (CodeQL / Semgrep)
+        uses: github/codeql-action/analyze@05963f47d870e2cb19a537396c1f668a348c7d8f # v3.24.8
         continue-on-error: false
       
       - name: Dependency Audit
@@ -50,10 +56,27 @@ jobs:
           # or: pip-audit
           # or: cargo audit
       
-      - name: Secret Scan
-        uses: trufflesecurity/trufflehog@main
+      - name: Secret Scan (TruffleHog)
+        uses: trufflesecurity/trufflehog@b11dd0f81d113426e2e584f29a007f354c4c9f7a # v3.88.2
         with:
           extra_args: --only-verified
+
+  # Container Provenance & Image Signing (for Docker/K8s builds)
+  container-signing:
+    needs: security
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for Cosign keyless OIDC signing
+      packages: write
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b4b1a6772273d4c6 # v3.5.0
+
+      - name: Sign Container Image (Keyless OIDC)
+        run: |
+          # Sign container image digest to prove provenance and build pipeline integrity
+          cosign sign --yes "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}"
 ```
 
 ---

@@ -25,8 +25,7 @@ Avoid maintaining manual YAML/JSON files that drift out of sync with real code. 
 ### Step 1: Install Dependencies
 
 ```bash
-npm install @asteasolutions/zod-to-openapi swagger-ui-react
-npm install -D @types/swagger-ui-react
+npm install @asteasolutions/zod-to-openapi @scalar/api-reference-react
 ```
 
 ### Step 2: Define Schema Registry (`lib/openapi.ts`)
@@ -120,14 +119,24 @@ export async function GET() {
 
 **Interactive Scalar API Documentation Page (`app/api-docs/page.tsx`):**
 
+To strictly comply with Content Security Policy headers (`references/security/CSP_CONFIGURATION_GUIDE.md`), avoid unpinned CDN iframes. Use the bundled React component:
+
 ```tsx
+'use client';
+
+import { ApiReferenceReact } from '@scalar/api-reference-react';
+import '@scalar/api-reference-react/style.css';
+
 export default function ApiDocsPage() {
   return (
     <div style={{ height: '100vh', width: '100%' }}>
-      <iframe
-        src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"
-        data-url="/api/openapi.json"
-        style={{ width: '100%', height: '100%', border: 'none' }}
+      <ApiReferenceReact
+        configuration={{
+          spec: {
+            url: '/api/openapi.json',
+          },
+          theme: 'purple',
+        }}
       />
     </div>
   );

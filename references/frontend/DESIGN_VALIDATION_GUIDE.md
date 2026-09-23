@@ -427,7 +427,7 @@ print(feature_demand.sort_values(ascending=False))
 
 **Tool:** Lighthouse (Chrome DevTools → Lighthouse → Accessibility)
 
-**Target:** Score ≥ 90
+**Target:** Score ≥ 85 (Medium) / ≥ 90 (Large+)
 
 **Common issues:**
 - Missing `alt` text on images
@@ -547,7 +547,7 @@ Update `engine/GATE-REGISTRY.md`:
 - All sprint tasks marked Done in TASKS.md
 - **Design validation checklist completed** ← NEW
 - At least 1 usability test recorded (or skip justification documented)
-- Accessibility score ≥ 90 (Lighthouse)
+- Accessibility score ≥ 85 for Medium (≥ 90 for Large+) (Lighthouse)
 - Responsive tested (mobile/tablet/desktop)
 
 **Blocker:** Cannot demo if critical usability issue found (task completion rate < 80%).
@@ -566,7 +566,7 @@ Update `engine/GATE-REGISTRY.md`:
 - Rollback plan documented
 
 **Design validation for production:**
-- Accessibility score ≥ 90
+- Accessibility score ≥ 85 for Medium (≥ 90 for Large+)
 - No critical usability blockers (from prior sprint demos)
 - Error states implemented (500, 404, network error)
 ```

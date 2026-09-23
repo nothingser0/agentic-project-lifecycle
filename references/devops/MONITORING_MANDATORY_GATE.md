@@ -53,7 +53,7 @@
 
 ## Logging
 - [x] Structured logging implemented (JSON format)
-- [x] Log retention confirmed: 7 days (Vercel Pro) or 30 days (Logtail)
+- [x] Log retention confirmed: Application debug logs 7 days (Vercel Pro) or 30 days (Logtail); Regulatory Security/Audit logs minimum 1 year (PostgreSQL audit_logs table / WORM storage per COMPLIANCE_AUTOMATION_GUIDE.md)
 - [x] Sample log verified in staging:
   ```json
   {"level":"info","message":"Employee created","employeeId":123,"timestamp":"2026-09-22T10:30:00Z"}

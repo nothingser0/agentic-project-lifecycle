@@ -142,12 +142,12 @@ Tech Debt Priority Score = (Risk Impact [1-5] × Exposure Frequency [1-5]) / Eff
 
 ### Step 1: Assess Severity (0-5 min)
 
-| Severity | Description | Examples | Response Time | Fix Target | Review Policy |
-|----------|-------------|----------|---------------|------------|---------------|
-| **P0 Critical** | Site down, data loss, security exploit | Auth broken, payment broken, SQL injection | Immediate (<15 min) | ≤ 4 hours | Emergency PR bypass permitted (post-deploy audit required) |
-| **P1 High** | Major feature broken, 5xx > 5% | Checkout fails, dashboard blank, API timeout | Same day (<1 hr) | ≤ 24 hours | Fast-track PR (at least 1 reviewer required; see BUG_PRIORITY_MATRIX.md) |
-| **P2 Medium** | Minor feature broken, 5xx < 1% | CSV export fails, filter broken | 2 business days | 1 week | Normal PR flow (next regular release) |
-| **P3 Low** | Cosmetic, typo, minor UX | Button text wrong, color off | Next sprint | 2 weeks | Backlog |
+| Severity | Description | Examples | Response Time (Triage) | Fix Target | Review Policy |
+|----------|-------------|----------|-------------------------|------------|---------------|
+| **P0 Critical** | Site down, data loss, security exploit | Auth broken, payment broken, SQL injection | Immediate (≤ 15 min) | ≤ 4 hours | Emergency PR bypass permitted (post-deploy audit required) |
+| **P1 High** | Major feature broken, 5xx > 5% | Checkout fails, dashboard blank, API timeout | Same day (≤ 1 hr) | ≤ 24 hours | Fast-track PR (at least 1 reviewer required; see BUG_PRIORITY_MATRIX.md) |
+| **P2 Medium** | Minor feature broken, 5xx < 1% | CSV export fails, filter broken | ≤ 4 hours | ≤ 1 week | Normal PR flow (next regular release) |
+| **P3 Low** | Cosmetic, typo, minor UX | Button text wrong, color off | ≤ 1 business day | ≤ 2 weeks | Backlog |
 
 **P0 only:** Full emergency PR review bypass permitted (with mandatory post-incident audit).  
 **P1:** Fast-track PR with at least one reviewer sign-off (may be approved asynchronously post-deploy to staging; do not fully bypass review).  

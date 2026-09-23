@@ -26,7 +26,7 @@ Three gates are enforced before the interview proceeds:
 |------|---------|---------|
 | **Gate 0: Business case approved** | After Q0a–b | Block Phase 1 until sponsor + business case confirmed |
 | **Gate 1: Legal sign-off** | After Q0e | Block Phase 2 until contract status confirmed |
-| **Gate 2: Charter signed → Kick-off cleared** | After Q0f | Kick-off should not happen until charter approved |
+| **Gate 2: Charter signed → Kick-off cleared** | After Q0f | Charter approval explicit; `docs/pm/STAKEHOLDERS.md` exists with governance roles identified (Sponsor, Budget Approver, Decision Owner) |
 
 For solo/personal projects: Gate 0 = one-paragraph rationale; Gate 1 = skip; Gate 2 = informal.
 The agent must explicitly confirm each gate with the user before advancing, even if briefly.
@@ -72,13 +72,9 @@ integration partner) / Hidden stakeholders (teams whose process changes when thi
 For each stakeholder: name/role → interest → influence (High/Med/Low) → power (High/Med/Low) →
 RACI assignment → communication preference
 
-**For Medium+ projects:** after collecting stakeholder answers, generate `docs/pm/RACI.md`
-from `templates/pm/RACI_MATRIX_TEMPLATE.md`. This is mandatory per Cross-phase rule 21 (SKILL.md).
-The RACI matrix must be complete before Gate 2 (charter sign-off) — a kick-off meeting with an
-incomplete RACI leaves decision authority undefined. Fill only the roles that are active on this
-project; remove unused role columns. Document veto rights (A★) explicitly for the Sponsor,
-Client, and Legal columns. For solo projects: skip `RACI.md`, write one paragraph in
-`docs/pm/STAKEHOLDERS.md` instead.
+**For Medium+ projects:** after collecting stakeholder answers, generate `docs/pm/STAKEHOLDERS.md` capturing all governance roles (Project Sponsor, Budget Approver, Client/Product Decision Owner, and external oversight). 
+
+**Operational Delivery RACI Matrix (`docs/pm/RACI.md`):** Note that operational delivery RACI mapping is deferred to **Phase 2a (Gate T)**. Generating an operational delivery RACI in Phase 0 causes a dependency inversion, because operational team size (Q12), developer composition (Q13), and individual % allocations (QT5) are only baselined in Phase 2/2a. At Phase 2a, generate `docs/pm/RACI.md` from `templates/pm/RACI_MATRIX_TEMPLATE.md` per Cross-phase rule 21. **Role-collapsing fallback for lean teams:** If the organization lacks dedicated specialist roles (e.g. dedicated Legal, Compliance, or QA Lead), do not leave columns empty or invent fictitious stakeholders; collapse Accountable (A) authority directly to the named Primary Sponsor / Founder, or designate an external adviser. Every row must have exactly one Accountable (A) assigned to a real person. Document veto rights (A★) explicitly for the Sponsor, Client, and Legal columns. For solo projects: skip `RACI.md`, write one paragraph in `docs/pm/STAKEHOLDERS.md` instead.
 
 Sub-question:
 - Q0d-i: For each stakeholder with High power + High interest: how often do they need a status
@@ -100,6 +96,9 @@ Sub-questions:
 **→ Gate 1 check:** 
 - If client-facing and Q0e-i ≠ "Signed", surface Gate 1 blocker: "Legal agreement should be signed before development starts. I'll note this as a Gate 1 blocker in `LEGAL-REGISTER.md`. Proceeding to planning now at your direction."
 - If Startup / Product Venture: Gate 1 passes without external client SoW; record `legal_track: startup_venture` in `LEGAL-REGISTER.md` and schedule vendor BAAs/DPAs prior to public production launch.
+- **Mandatory Statutory Warning for Regulated Data (HIPAA/PCI-DSS/GDPR):** If Q0e-ii indicates regulated patient health records (ePHI) or payment cardholder data, the agent MUST explicitly issue this warning at Gate 1:
+  > *"Notice on Commercial General Availability (GA): Under `modules/04-closure.md:100-128`, the Provisional Legal Waiver is strictly limited to pre-production testing, sandboxes, and closed internal pilots with synthetic or de-identified data. Public commercial production release handling real patient/cardholder data strictly requires verified sign-off and attestation by a qualified external legal counsel or certified compliance auditor before DNS cutover to live traffic. Ensure an external legal/compliance engagement is scheduled within your delivery runway."*
+  Record in `docs/pm/LEGAL-REGISTER.md`: `ga_external_attestation_required: true`.
 
 **Q0f — Project Charter Sign-off**
 > "Has the project charter been reviewed and approved by the sponsor? How will sign-off happen?"
@@ -288,6 +287,19 @@ Reference: `references/pm/REQUIREMENT_GATHERING_GUIDE.md`
 - Q15a: Budget Timeline? (Now / After launch / After revenue / After funding)
 - Q15b: One-Time Budget? ($0 / $100-500 / $500-5K / $5K-50K / $50K+)
 
+#### Schedule & Scope Feasibility Check (PO & Stakeholder Guard)
+
+**Trigger:** Whenever requested timeline is short (≤ 8 weeks) AND the project carries Large or Enterprise statutory scope (regulated data, HIPAA/PCI/SOC 2 compliance, multi-role auth, payments):
+The agent MUST NOT silently schedule an unachievable plan. The agent must immediately present an explicit feasibility warning and force a trade-off decision before advancing to Phase 2a:
+
+> "⚠️ Feasibility Warning: You requested an MVP launch in [e.g. 6 weeks] for an application handling regulated data / statutory compliance [HIPAA/PCI/SOC 2]. Statutory compliance activities (formal threat modeling, audit logging, BAA negotiation, penetration testing, disaster recovery drills) typically require a minimum 8–12 week engineering runway for a lean team. Proceeding blindly creates extreme risk of missed launch or severe regulatory liability.
+> We must choose one of these three paths:
+> 1. **Regulated MVP Fast-Track:** Prune all non-core features; build strictly the single core clinical flow + non-negotiable compliance floor (encryption, audit log, BAA-covered hosting) with startup governance (`regulated_mvp_track: true`).
+> 2. **Phased Staged Launch:** Launch a closed pre-production pilot with de-identified/synthetic data at 6 weeks; schedule formal legal/compliance sign-off and public GA at Week 10–12.
+> 3. **Extend Timeline Baseline:** Set realistic delivery baseline at 10–12 weeks."
+
+Record the chosen resolution in `CONTEXT.md` as `feasibility_resolution: [regulated_mvp | phased_launch | extended_timeline]` and in `docs/pm/BUSINESS-CASE.md`.
+
 ### Phase 2a: Detailed Timeline (8 prompt units, 30-45 min)
 
 **Always run Phase 2a after Phase 2 (Resources).** Phase 2 captures the high-level timeline and
@@ -303,7 +315,7 @@ any `docs/pm/TIMELINE.md`, `docs/pm/SPRINT-PLAN.md`, or `docs/pm/MILESTONE-REGIS
 
 | Gate | Trigger | Block |
 |---|---|---|
-| **Gate T: Timeline Baseline Approved** | After QT8 | Block Phase 3 until scheduling model confirmed and milestone register has at least M0–M6 with target dates |
+| **Gate T: Timeline & Ownership Baseline Approved** | After QT8 | Block Phase 3 until scheduling model confirmed, milestone register has target dates, and `docs/pm/RACI.md` exists with all active operational delivery roles populated (no empty cells for Responsible/Accountable per SKILL.md Rule 21) |
 
 Gate T is lightweight for solo/personal projects (a one-page milestone list with dates is enough)
 and heavyweight for enterprise/client-facing projects (full TIMELINE.md, SPRINT-PLAN.md,
@@ -404,7 +416,7 @@ If the client has a different tolerance, capture it here and override the defaul
 ---
 
 **→ Phase 2a complete.** Agent summarizes: scheduling model / sprint duration / milestone count /
-calendar constraints noted / buffer allocated / baseline status. Then proceeds to Phase 1 (Discovery).
+calendar constraints noted / buffer allocated / baseline status. Then proceeds to Phase 3 (Tech Stack) in `02b-planning-stack-setup.md`.
 
 #### Phase 2a Output Files (scaled by project type)
 

@@ -15,11 +15,14 @@ This module routes the planning engine: Phase 0 through Phase 6 (Build Setup). P
 
 | Planning Mode | Tier | REQUIRED reading | SKIP |
 |---|---|---|---|
-| **Lightweight** | Medium | Read `02a-planning-core-phases.md` (Phase 0, 1a, 2a), then `02b-planning-stack-setup.md` (Phase 6 only) | Phase 1, 2, 3, 4, 5, Phase 7 |
+| **Lightweight** | Medium | Read `02a-planning-core-phases.md` (Phase 0, 1a, 2a), then `02b-planning-stack-setup.md` (Phase 3 Tech Stack and Phase 6 Build Setup) | Phase 1, 2, 4, 5, Phase 7 |
 | **Standard** | Large | Read `02a-planning-core-phases.md` (all), then `02b-planning-stack-setup.md` (Phase 3, 5, 6) | Phase 4 (if design already exists), Phase 7 |
-| **Full** | Enterprise | Read all files in order: `02a-planning-core-phases.md` → `02b-planning-stack-setup.md` → `02c-planning-reference.md` | Nothing is skipped |
+| **Standard (Regulated-MVP)** | Enterprise (`regulated_mvp_track: true`) | Read `02a-planning-core-phases.md` (Phase 0, 1a, 2, 2a), then `02b-planning-stack-setup.md` (Phase 3 Tech Stack, Phase 5 Security Q34–Q39b & Compliance COMP1–COMP2, Phase 6 Build Setup) | Phase 1 full discovery, Phase 4 (if design exists), corporate enterprise governance in Phase 0 (use startup `STAKEHOLDERS.md` and single-tier charter), Phase 7 |
+| **Full** | Enterprise (Default) | Read all files in order: `02a-planning-core-phases.md` → `02b-planning-stack-setup.md` → `02c-planning-reference.md` | Nothing is skipped |
 
-**Lightweight shortcut:** For Medium, only read `02a-planning-core-phases.md` through Phase 2a, then `02b-planning-stack-setup.md` Phase 6. The rest is not relevant.
+**Lightweight shortcut:** For Medium, read `02a-planning-core-phases.md` through Phase 2a, then `02b-planning-stack-setup.md` Phase 3 (Tech Stack) and Phase 6 (Build Setup). Tech stack decisions in Phase 3 are strictly required because Phase 6 generates `VERIFY.md` and `ARCHITECTURE.md` bound to that stack. Phase 1, 2, 4, 5 are skipped.
+
+**Regulated MVP Fast-Track shortcut:** For lean teams with statutory compliance overrides (`regulated_mvp_track: true`), do not default to Full 100-doc Enterprise planning. Follow the **Standard (Regulated-MVP)** row above: preserve non-negotiable security and compliance deep-dives (Q34–Q39b, COMP1–COMP2, encryption, audit logging, BAA tracking) while pruning enterprise corporate administration.
 
 ---
 
@@ -87,6 +90,23 @@ Use one of: `DECIDED`, `PROVISIONAL`, `ASSUMED`, `UNKNOWN`, `BLOCKED`. Every mat
 ### Human authority boundary
 
 The agent may propose, draft, analyze, and validate. It must not silently change acceptance criteria, weaken verification gates, approve its own failed gate, change governance ownership, close a milestone, accept UAT/BAST on behalf of a human, or hide an unresolved blocker.
+
+### Deadlock & Ambiguity Escalation Protocol (Non-Expert / Autonomous Guard)
+
+If any decision, requirement conflict, or constraint trade-off remains unresolved after **2 interview exchanges** (e.g. user cannot decide, provides contradictory inputs, or critical technical information is missing), the agent MUST NOT guess silently or invent an unverified default.
+
+1. **Stop probing immediately.**
+2. **Output a structured Human Escalation Block:**
+   ```markdown
+   ## 🚨 Escalation Required: [Specific Decision/Conflict]
+   - **Conflict / Ambiguity:** [Explain the exact contradiction or missing fact]
+   - **Trade-off Analysis:**
+     - Option A: [Description + cost/risk implications]
+     - Option B: [Description + cost/risk implications]
+   - **Impact if unresolved:** [What architectural or schedule damage occurs]
+   - **Required Action:** Human decision required. Reply with 'Option A' or 'Option B' to unblock.
+   ```
+3. Halt phase transition until explicit human confirmation is received and recorded in `docs/dev-docs/DECISIONS.md`.
 
 ### Small-project rule
 

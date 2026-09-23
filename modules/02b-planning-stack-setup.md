@@ -3,8 +3,9 @@
 **Contains:** Phase 3 (Tech Stack), Phase 4 (Design), Phase 5 (Deep-Dive), Phase 6 (Build Setup), Phase 7 (Post-Project Closure).
 
 **Used by:**
-- **Lightweight:** Phase 6 only
+- **Lightweight:** Phase 3 (Tech Stack) and Phase 6 (Build Setup)
 - **Standard:** Phase 3, Phase 5 (relevant probes), Phase 6
+- **Standard (Regulated-MVP):** Phase 3, Phase 5 (Security Q34–Q39b & Compliance COMP1–COMP2), Phase 6
 - **Full:** All phases
 
 See `02-planning-router.md` for routing details.
@@ -29,15 +30,16 @@ Options (multi-select if hybrid): eCommerce / ERP / CRM / HRIS / Inventory / Boo
 18. Database (TOP 10, filtered by scale + budget + domain guide recommendation)
 19. Backend Architecture (TOP 10, filtered by team + scale)
 20. API Style (REST / GraphQL / tRPC / gRPC / Hybrid)
-21. Authentication (Clerk / Auth.js / Supabase / WorkOS / Lucia, filtered by budget)
-22. Deployment Platform (Vercel / Railway / Fly.io / Render / Coolify, filtered by budget)
+21. Authentication (Clerk / Auth.js / Supabase / WorkOS / Better-Auth, filtered by budget)
+22. Deployment Platform (Vercel / Railway / Fly.io / Render / Coolify / AWS / GCP, filtered by budget)
 
-**Sub-questions (5):**
+**Sub-questions (6):**
 - Q16a: Node.js Framework? (Express / Fastify / NestJS / Hono / tRPC / Next.js API, if Node.js)
 - Q16b: Runtime? (Node.js / Bun / Deno, if Node.js/TS)
 - Q17a: Rendering Strategy? (CSR / SSR / SSG / ISR / Hybrid, if SSR-capable)
 - Q18a: Data Model? (Relational / Document / Key-Value / Graph / Time-series / Not sure)
 - Q18b: Additional Infrastructure? (Cache / Search / Analytics DB / File storage / Queue, multi-select)
+- Q22a: Statutory BAA & Vendor Plan Clearance? (if handling HIPAA PHI, PCI-DSS, or regulated data): Verify whether chosen deployment and database vendors execute Business Associate Agreements (BAAs) on the planned subscription tier. Standard self-serve PaaS accounts (Vercel, Railway, Supabase Pro) generally DO NOT execute BAAs without enterprise contracts; hyperscalers (AWS, GCP, Azure) provide click-through BAA execution for all accounts. Never confirm a self-serve PaaS stack for regulated healthcare data without verified BAA contract execution.
 
 ### Phase 4: Design (11 core + 3 conditional probes, ~45 min) — SKIPPABLE
 
@@ -66,7 +68,7 @@ Options (multi-select if hybrid): eCommerce / ERP / CRM / HRIS / Inventory / Boo
 #### Core Prompt Set (38 prompt units)
 
 **Security (8 Q):**
-- Q34: Security Level (Basic — auth + HTTPS only / Standard — OWASP Top 10 hardening / Hardened — pen-test ready / Compliance-grade — audit trail + encryption at rest, filtered by Q13 team type and Q94 compliance needs)
+- Q34: Security Level (Basic — auth + HTTPS only / Standard — OWASP Top 10 hardening / Hardened — pen-test ready / Compliance-grade — audit trail + encryption at rest, filtered by Q13 team type and COMP1–COMP2 compliance needs)
 - Q35: Hardening Checklist (Input validation & sanitization / SQL injection prevention via ORM+parameterized queries / XSS protection via CSP headers / Dependency scanning — npm audit, Snyk, Dependabot / all of the above)
 - Q36: Secrets Management (`.env` + gitignore — solo/$0 / GitHub Actions secrets — small team / Doppler or Infisical — $50-500 / HashiCorp Vault or AWS Secrets Manager — enterprise, filtered by budget)
 - Q37: CORS Strategy (Allow specific origins only — recommended default / Allow all `*` — dev/prototype only, never production / Credentialed requests with strict origin allowlist — if cookies/sessions used)
@@ -133,7 +135,7 @@ See `references/pm/PM_FUNDAMENTALS_GUIDE.md` for why these six matter even on a 
 **Design Systems at Scale (8 prompt units, if Q12=6+ devs):**
 - DS1-DS8: Design Tokens, Storybook, Visual Regression, Design-to-Code, Multi-Brand, Versioning, Governance, Handoff
 
-**Compliance (2 prompt units, if Q13=Enterprise or healthcare/fintech):**
+**Compliance (2 prompt units, if Q15 matches Financial & Fintech, Booking (Healthcare), or handling regulated data / compliance override, or Q13=Enterprise):**
 - COMP1-COMP2: Compliance Required (GDPR/CCPA/HIPAA/PCI-DSS/SOC 2/ISO 27001/FedRAMP), Data Residency
 
 **Mobile (4 prompt units, if Q2=Mobile App):**

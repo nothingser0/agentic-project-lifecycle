@@ -17,7 +17,7 @@ Read these on demand during specific phases — do not load all upfront:
 | **Phase 2a: Timeline** | `references/pm/DETAILED_TIMELINE_GUIDE.md` | `DETAILED_TIMELINE_TEMPLATE.md` |
 | **Phase 3: Architecture** | `references/backend/TECH_STACK_EXAMPLES.md`, `references/backend/DOMAIN_STACK_GUIDE.md` (read domain section first if Q15 matched a specific domain) | `ARCHITECTURE_TEMPLATE.md`, `ADR_TEMPLATE.md` |
 | **Phase 4: Design** | `templates/specs/brand-questionnaire.md` | `DESIGN_TEMPLATE.md` |
-| **Phase 5: Governance & Ops** | `references/pm/PM_FUNDAMENTALS_GUIDE.md`, `TESTING_STRATEGY_DETAIL.md`, `SECURITY_HARDENING_GUIDE.md`, `DEVOPS_DEPLOYMENT_GUIDE.md`, `MONITORING_OBSERVABILITY.md` | `INTEGRATION_CONTRACT_TEMPLATE.md`, `RUNBOOK_LOCAL_TEMPLATE.md` |
+| **Phase 5: Governance & Ops** | `references/pm/PM_FUNDAMENTALS_GUIDE.md`, `TESTING_STRATEGY_DETAIL.md`, `SECURITY_HARDENING_GUIDE.md`, `DEVOPS_DEPLOYMENT_GUIDE.md`, `OBSERVABILITY_GUIDE.md` | `INTEGRATION_CONTRACT_TEMPLATE.md`, `RUNBOOK_LOCAL_TEMPLATE.md` |
 | **Phase 6: Build Setup** | `references/ai/AGENT_ORCHESTRATION_GUIDE.md`, `DEVELOPMENT_STAGE_GUIDE.md` | `VERIFY_TEMPLATE.md`, `OWNERSHIP_TEMPLATE.md`, `CONTEXT_MAP_TEMPLATE.md`, `AGENT_PROMPTS_TEMPLATE.md`, `DEVELOPMENT_KANBAN_TEMPLATE.md` |
 | **Phase 7: Closure** | `references/pm/POST_PROJECT_CLOSURE_GUIDE.md` | `BAST_TEMPLATE.md`, `CLOSURE_REPORT_TEMPLATE.md`, `POST_MORTEM_TEMPLATE.md`, `HANDOVER_TEMPLATE.md` |
 | **Troubleshooting** | `references/pm/PITFALLS.md` | — |
@@ -179,14 +179,19 @@ Agent asks adaptive questions (adaptive).
 - Checks latest versions (web_search)
 - Generates the minimum sufficient documentation profile; full base profile is 101 files and the current maximum is 148
 - Saves to `~/projects/TaskFlow/`
-- Creates setup-git.sh (automated git branch setup)
 - Creates GIT_BRANCH_STRATEGY.md (workflow guide)
 
 ### 4. Setup Git Branches (2 min)
 
+Run native git commands directly (no external scripts required per `SKILL.md:84-88`):
+
 ```bash
 cd ~/projects/TaskFlow
-bash setup-git.sh
+git init
+git checkout -b main
+git add .
+git commit -m "chore: initial project documentation scaffold"
+git checkout -b dev
 ```
 
 Creates:

@@ -42,15 +42,21 @@ write commands that do not exist**, because agents will run them, fail, then fab
 # ── gate:pr ────────────────────────────────────────────────
 {pnpm test:unit}                  # all unit tests, not --changed
 {pnpm test:contract}              # request/response validated against contracts/openapi.yaml
+{npx @stoplight/spectral-cli lint contracts/openapi.yaml} # lint OpenAPI specification compliance
 {pnpm lint:boundaries}            # dependency rules from ARCHITECTURE.md §3
 {pnpm lint:tokens}                # no hardcoded colors/spacing outside tokens.json
+{npx markdown-link-check README.md docs/**/*.md} # verify documentation freshness and links
 {pnpm build}
 {pnpm audit --audit-level=high}
 
 # ── gate:qa ────────────────────────────────────────────────
 {pnpm test:e2e}                   # scenarios from acceptance/*.feature
-{pnpm test:a11y}                  # axe on changed pages
-{pnpm coverage:check}             # thresholds below
+{pnpm test:a11y}                  # axe-core on changed routes via Playwright (zero critical/serious violations)
+{pnpm test:visual}                # Playwright visual regression screenshot diff (zero unexpected pixel drift)
+{pnpm coverage:check}             # thresholds below (lines, branches, functions)
+# Data Pipeline & Analytics (if deliverable_type: data_pipeline / ml_model):
+{dbt test --select tag:critical}  # assert zero uniqueness, nullability, or referential integrity failures per DATA_PIPELINE_GUIDE.md
+{soda scan -d warehouse -c soda.yml} # data quality scan (freshness, volume anomalies, schema compliance)
 
 # ── gate:sit ───────────────────────────────────────────────
 {pnpm test:integration}           # mock ON, all integrations in INTEGRATIONS.md
@@ -71,13 +77,19 @@ Numbers, not adjectives. "Adequate coverage" cannot fail; `--lines 70` can.
 
 | Metric | Threshold | Measured by | If failed |
 |---|---|---|---|
-| Unit coverage (lines) | ≥ {70}% | `coverage:check` | blocks `gate:qa` |
-| Critical module coverage ({auth, billing}) | ≥ {90}% | `coverage:check` | blocks `gate:qa` |
-| Heaviest route bundle size | ≤ {250} KB gzip | `build` | blocks `gate:pr` |
+| Unit coverage (lines/statements) | ≥ {80}% | `coverage:check` | blocks `gate:qa` |
+| Branch coverage | ≥ {75}% | `coverage:check` | blocks `gate:qa` |
+| Critical module coverage ({auth, billing, payments}) | {100}% | `coverage:check` | blocks `gate:qa` |
+| Heaviest route bundle size | ≤ {300} KB gzip (Medium) / ≤ {200} KB (Large/Enterprise) | `build` | blocks `gate:pr` |
 | Staging LCP (p75) | ≤ {2.5} s | {Lighthouse CI} | blocks `gate:release` |
 | Serious/critical a11y violations | {0} | `test:a11y` | blocks `gate:qa` |
+| Visual regression pixel drift | ≤ {0.2%} | `test:visual` | blocks `gate:qa` |
 | `high`/`critical` vulnerabilities | {0} | `audit` | blocks `gate:pr` |
 | Endpoints without openapi.yaml entry | {0} | `test:contract` | blocks `gate:pr` |
+| Broken documentation links | {0} | `markdown-link-check` | blocks `gate:pr` |
+| OpenAPI schema lint errors | {0} | `spectral lint` | blocks `gate:pr` |
+| Critical dbt data quality test failures | {0} | `dbt test` | blocks `gate:qa` |
+| Critical Soda data anomalies / freshness violations | {0} | `soda scan` | blocks `gate:qa` |
 
 ---
 

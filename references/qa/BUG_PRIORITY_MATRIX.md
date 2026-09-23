@@ -8,12 +8,12 @@
 
 ## Priority Matrix
 
-| Priority | Severity | Response Time | Fix Target | Examples |
-|----------|----------|---------------|------------|----------|
-| **P0** | **Critical** | **Immediate** | **4 hours** | Site down, data loss, security breach, payment broken |
-| **P1** | **High** | **Same day** | **24 hours** | Core feature broken, login fails, major perf degradation |
-| **P2** | **Medium** | **2 business days** | **1 week** | Non-core feature broken, minor perf issue, bad UX |
-| **P3** | **Low** | **Next sprint** | **2 weeks** | Cosmetic issue, typo, nice-to-have improvement |
+| Priority | Severity | First Response (Triage) | Fix Target | Examples |
+|----------|----------|-------------------------|------------|----------|
+| **P0** | **Critical** | **≤ 15 minutes** | **≤ 4 hours** | Site down, data loss, security breach, payment broken |
+| **P1** | **High** | **≤ 1 hour** | **≤ 24 hours** | Core feature broken, login fails, CVSS 4.0–6.9 auth/data flaw |
+| **P2** | **Medium** | **≤ 4 hours** | **≤ 1 week** | Non-core feature broken, minor perf issue, bad UX, CVSS < 4.0 |
+| **P3** | **Low** | **≤ 1 business day** | **≤ 2 weeks** | Cosmetic issue, typo, nice-to-have improvement |
 
 ---
 
@@ -26,14 +26,19 @@ Q1: Does it block ALL users from using the app?
   YES → P0 (site down, database unreachable)
   NO → Q2
 
-Q2: Is it a high-severity security vulnerability or breach?
-    (CVSS ≥ 7.0, active exploit, leaked production credentials,
-    SQL injection, unescaped XSS, auth bypass, privilege escalation)
-  YES → P0
-  NO (Security issue with CVSS < 7.0, missing hardening header,
-      or non-exploitable transitive dependency) → Route to P2 (Medium)
-      or P3 (Low) based on exposure and blast radius.
-  NO (Not a security issue) → Q3
+Q2: Is it a security vulnerability or active exploit?
+  CVSS ≥ 7.0, active exploit, leaked production credentials,
+  SQL injection, unescaped XSS, auth bypass, privilege escalation:
+  → P0 (Critical, fix in ≤ 4h)
+  
+  CVSS 4.0–6.9 affecting auth, session integrity, or sensitive PII:
+  → P1 (High, fix in ≤ 24h)
+  
+  CVSS < 4.0, missing defense-in-depth header, or non-exploitable transitive dep:
+  → Route to P2 (Medium) or P3 (Low) based on exposure and blast radius.
+  
+  Not a security issue:
+  → Q3
 
 Q3: Does it cause data loss, or a legal/compliance violation
     (GDPR breach, data leaked)?

@@ -19,7 +19,9 @@
 | **Small** | 24 hours | 24 hours | Manual restore from daily backup |
 | **Medium** | 4 hours | 1 hour | Automated backup + runbook |
 | **Large** | 1 hour | 15 minutes | Hot standby + automated failover |
-| **Enterprise** | 5 minutes | 0 (zero data loss) | Multi-region active-active + synchronous replication |
+| **Enterprise** | < 1 min (stateless failover) / 15–30 min (stateful PITR) | 0 (sync replica) / ≤ 5 min (PITR) | Multi-region active-active + synchronous replication / Point-in-Time Recovery |
+
+*Note on Stateful vs. Stateless RTO:* Stateless application services achieve < 1 min failover via global load balancers (Cloudflare, Route 53). However, if an incident involves database corruption or destructive migration requiring full database restoration, the realistic Point-in-Time Recovery (PITR) RTO is **15–30 minutes** (per `references/devops/ROLLBACK_DEPLOYMENT_GUIDE.md:141-143`). Never quote a 5-minute RTO for stateful database restorations.
 
 **Your targets:**
 

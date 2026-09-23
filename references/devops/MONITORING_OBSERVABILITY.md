@@ -1,5 +1,8 @@
 # Monitoring & Observability — Phase 5 Production
 
+> ⚠️ **NOTICE / CANONICAL GUIDE:**  
+> This file is maintained for backward compatibility. The canonical, comprehensive guide for observability, metrics instrumentation, OpenTelemetry, and golden signals is **`references/devops/OBSERVABILITY_GUIDE.md`**. Please refer to `OBSERVABILITY_GUIDE.md` for all new projects.
+
 **Purpose:** Production monitoring setup (errors, performance, logs, alerts).
 
 **Version:** 1.0.0 (2026 tools)

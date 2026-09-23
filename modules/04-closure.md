@@ -97,6 +97,37 @@ Fill `templates/closure/BAST_TEMPLATE.md`. BAST cannot contain credentials or se
 
 For `handover_formality: legal`: the agent may draft the BAST, but it **cannot** self-certify legal review. A human with legal or procurement authority must sign off on the BAST itself — not only on `COMPLIANCE.md`. Record the reviewer in CONTEXT.md as `legal_reviewed_by: [name, role, date]`. Gate C will not pass without this field populated by a real person's name.
 
+**Exception Protocol — When No In-House Legal Reviewer Exists (Startups & Lean Teams):**
+If `handover_formality: legal` was assigned (e.g. under Regulated MVP track) but the organization has no dedicated in-house counsel or procurement officer, the primary executive sponsor (Founder / CEO / Managing Director) may execute a **Provisional Legal Waiver & Assumption of Compliance Risk**.
+
+**Scope Boundary & Environment Guard (MANDATORY):** This Provisional Legal Waiver is strictly restricted to **pre-production environments, closed internal pilots, sandbox demos, or stealth alpha testing with synthetic or de-identified data**. It CANNOT be used to authorize a public general-availability (GA) production release handling live statutory patient health records (HIPAA PHI) or payment cardholder data (PCI-DSS). Public commercial launch with real statutory data strictly requires verified sign-off by a qualified legal counsel or certified compliance auditor (`legal_reviewed_by`).
+
+Record in `CONTEXT.md`:
+```yaml
+legal_waiver_executed: true
+legal_waiver_scope: [internal_pilot | sandbox_demo | pre_production_testing] # Strictly cannot be 'public_production_ga'
+legal_waiver_signed_by: [Executive Sponsor Name, Title]
+legal_waiver_reason: [e.g. Early-stage venture pre-counsel review; formal audit scheduled prior to public GA]
+legal_reviewed_by: "PROVISIONAL_WAIVER: [Executive Sponsor Name, Title]"
+legal_review_date: [YYYY-MM-DD]
+```
+This satisfies Gate C closure evidence for early testing milestones without creating an artificial deadlock, while preserving an auditable chain of custody that statutory liability was assumed by the accountable business owner and preventing uncertified public release of regulated systems.
+
+**Commercial GA Release Compliance Transition Protocol (From Pilot to Public GA):**
+When a startup operating under a Provisional Legal Waiver prepares for public commercial General Availability (GA) handling live statutory patient (HIPAA) or cardholder (PCI) data:
+
+1. **External Compliance Attestation:** Before production traffic DNS is cut over to real public users, the startup must obtain a signed attestation, SOC 2 / HIPAA compliance report, or formal legal review from a qualified external healthcare attorney or accredited compliance platform (e.g. Vanta, Secureframe, specialized legal counsel).
+2. **Promoting Gate C to Full Commercial Clearance:**
+   Update `CONTEXT.md`:
+   ```yaml
+   legal_waiver_executed: false
+   legal_waiver_scope: public_production_ga
+   legal_reviewed_by: "[Attorney / Auditor Name, Firm Name, Date]"
+   legal_review_date: [YYYY-MM-DD]
+   compliance_attestation_ref: "docs/compliance/legal-attestation-letter.pdf"
+   ```
+3. **Domain & DNS Guard:** Deployment pipelines must assert that `legal_waiver_executed: false` before binding public production custom domains on regulated data workloads.
+
 **QC4 — Closure Report**
 > "Compare actual vs planned: how many percent did timeline slip? Actual budget vs estimate? Scope dropped vs added?"
 

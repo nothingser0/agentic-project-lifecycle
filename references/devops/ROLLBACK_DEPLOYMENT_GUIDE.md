@@ -123,16 +123,16 @@ export default {
 
 **Rollback decision matrix:**
 
-| Severity | Impact | Action | Response Time |
-|----------|--------|--------|---------------|
-| **P0 Critical** | Site down, auth broken, data loss | Immediate rollback | ≤ 5 min |
+| Severity | Impact | Action | Response Time (Rollback Execution) |
+|----------|--------|--------|------------------------------------|
+| **P0 Critical** | Site down, auth broken, data loss | Immediate rollback | ≤ 5 min (stateless) / 15–30 min (stateful DB PITR)* |
 | **P1 High** | Feature broken, 5xx errors > 5% | Rollback after 10 min if no quick fix | ≤ 15 min |
 | **P2 Medium** | UI bug, degraded UX, 5xx < 1% | Fix forward (no rollback) | Next deploy |
 | **P3 Low** | Typo, minor visual glitch | Fix forward | Next sprint |
 
 **What "Response Time" measures here — read this before quoting the numbers externally:**
 
-This is the **execution time of the rollback action itself** (the mechanical `vercel rollback` / `kubectl rollout undo` / traffic-switch step), measured from the moment a human or on-call engineer decides to roll back. It is **not** the same number as `references/devops/INCIDENT_RESPONSE_RUNBOOK.md`'s "resolution time," which measures the **full incident lifecycle** (detection → triage → decision → rollback execution → verification) and is correctly a larger number (15 min target for P0 there, because it includes everything before and after this table's ≤5 min action). Do not copy the ≤5 min figure into a client-facing SLA as if it were total incident resolution time — quote the incident runbook's resolution-time target for that, and use this table's numbers only for the internal rollback-mechanics step. The worked post-mortem example below (18 minutes, P1) is consistent with this: it includes detection, user reports, and investigation time on top of the ≤15 min P1 rollback-action target, not a violation of it.
+This is the **execution time of the rollback action itself** (the mechanical `vercel rollback` / `kubectl rollout undo` / traffic-switch step), measured from the moment a human or on-call engineer decides to roll back. It is **not** the same number as `references/devops/INCIDENT_RESPONSE_RUNBOOK.md`'s "Mitigation Target" or "Final Fix Target", which measure the **full incident lifecycle** (detection → triage in ≤15 min → decision → rollback execution → verification → mitigation in ≤1 hour, final fix in ≤4 hours per `references/qa/BUG_PRIORITY_MATRIX.md`). Do not copy the ≤5 min figure into a client-facing SLA as if it were total incident resolution time — quote the incident runbook's mitigation-time target for that, and use this table's numbers only for the internal mechanical rollback step. The worked post-mortem example below (18 minutes, P1) is consistent with this: it includes detection, user reports, and investigation time on top of the mechanical rollback action target, not a violation of it.
 
 **Crucial Caveat for Deployments with Database Migrations:**
 The ≤5 minute rollback SLA applies strictly to **stateless application services**. If the failing deployment executed a database migration:
@@ -146,7 +146,7 @@ The ≤5 minute rollback SLA applies strictly to **stateless application service
 - **Rollback:** User-facing breakage, no quick fix, or unknown root cause
 - **Fix forward:** Known small fix (≤ 5 min to patch), no data risk
 
-### Execution (10-15 min)
+### Execution (≤ 5 min stateless, 15–30 min stateful PITR)
 
 **Rollback command per platform:**
 

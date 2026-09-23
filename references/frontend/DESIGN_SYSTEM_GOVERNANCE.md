@@ -84,13 +84,12 @@ find src -type f -name "*.tsx" -exec sed -i 's/--color-primary/--color-brand/g' 
 Initial release.
 ```
 
-### Token Migration Script
+### Token Migration (Automated Codemod / CLI)
 
-**Automate breaking changes:**
+**Automate breaking token renames:**
 
 ```bash
-#!/bin/bash
-# migrate-v1-to-v2.sh
+# Execute directly in terminal or codemod runner:
 
 echo "Migrating design tokens from v1 to v2..."
 
@@ -132,6 +131,26 @@ echo "Migration complete. Run 'npm run lint' to verify."
 | **Medium** | Senior dev or design lead |
 | **Large** | Design system working group (2+ designers, 2+ devs) |
 | **Enterprise** | Design system council (monthly review) |
+
+### Design Token & Component Exception Protocol (Escape Hatch)
+
+To prevent governance gridlock when building one-off marketing landing pages, specialized data visualizations (D3, Canvas, WebGL, 3D), or unique brand artwork that genuinely cannot conform to standard design tokens:
+
+An engineer or agent may declare a formal exception instead of blocking the build:
+
+```yaml
+# Recorded in docs/pm/DECISIONS.md or PR description:
+design_token_exception:
+  scope: [file path, e.g. "app/(marketing)/landing.tsx", "components/charts/ForceGraph.tsx"]
+  reason: [marketing_landing_page | complex_data_viz_canvas | unique_brand_artwork]
+  approved_by: [Senior Dev, Design Lead, or Founder]
+  still_enforced:
+    - WCAG 2.1 AA text contrast (minimum 4.5:1 for normal text, 3:1 for large text)
+    - Full keyboard accessibility and visible focus rings
+    - Strict isolation: Custom styles must be scoped (CSS Modules or Tailwind arbitrary classes scoped to component) and must NEVER mutate or pollute global design token variables.
+```
+
+This prevents an autonomous agent from erroneously rejecting valid custom creative work while strictly preserving accessibility and global token hygiene.
 
 ### Component Lifecycle
 

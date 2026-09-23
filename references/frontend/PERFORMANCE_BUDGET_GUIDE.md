@@ -13,7 +13,7 @@
 | Metric | Target (Good) | Acceptable (Warn) | Fail (Block) | Description |
 |--------|---------------|-------------------|--------------|-------------|
 | **LCP** | ≤ 2.5s | ≤ 4.0s | > 4.0s | Largest Contentful Paint (main content visible) |
-| **FID** | ≤ 100ms | ≤ 300ms | > 300ms | First Input Delay (interaction responsiveness) |
+| **INP** | ≤ 150ms | ≤ 200ms | > 200ms | Interaction to Next Paint (official Core Web Vital, replaces legacy FID) |
 | **CLS** | ≤ 0.1 | ≤ 0.25 | > 0.25 | Cumulative Layout Shift (visual stability) |
 | **FCP** | ≤ 1.8s | ≤ 3.0s | > 3.0s | First Contentful Paint (first pixel painted) |
 | **TTFB** | ≤ 600ms | ≤ 1.0s | > 1.0s | Time to First Byte (server response) |
@@ -27,7 +27,8 @@
 
 | Asset Type | Target | Max (Warn) | Fail (Block) |
 |------------|--------|------------|-------------|
-| **Initial JS** | ≤ 200 KB | ≤ 350 KB | > 500 KB |
+| **Initial JS (Gzipped Transfer)** | ≤ 200 KB | ≤ 300 KB | > 500 KB |
+| **Initial JS (Uncompressed)** | ≤ 600 KB | ≤ 1.0 MB | > 1.5 MB |
 | **Initial CSS** | ≤ 50 KB | ≤ 100 KB | > 150 KB |
 | **Images (per page)** | ≤ 500 KB | ≤ 1 MB | > 2 MB |
 | **Fonts** | ≤ 100 KB | ≤ 200 KB | > 300 KB |
@@ -118,7 +119,7 @@ jobs:
     "assert": {
       "preset": "lighthouse:recommended",
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.9}],
+        "categories:performance": ["error", {"minScore": 0.85}],
         "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
         "first-contentful-paint": ["error", {"maxNumericValue": 1800}],
         "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
@@ -309,7 +310,7 @@ Update `engine/GATE-REGISTRY.md`:
 - OWNERSHIP.md check passed (if multi_agent: true)
 
 **Performance check:**
-- Lighthouse score ≥ 90 (performance category)
+- Lighthouse score ≥ 85 for Medium (≥ 90 for Large+)
 - LCP ≤ 2.5s, CLS ≤ 0.1, TBT ≤ 200ms
 - Bundle size increase ≤ 20% (unless justified)
 

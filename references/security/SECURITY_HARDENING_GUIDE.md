@@ -29,7 +29,7 @@ Pick the floor, not the ceiling — a "Standard" project can still add specific 
 - **Basic** — auth (password hashing, session/JWT expiry) + HTTPS everywhere. Fine for internal tools, prototypes, no PII.
 - **Standard** — Basic + OWASP Top 10 mitigations applied deliberately (not just "we used a framework so we're fine"). Default recommendation for anything with real users.
 - **Hardened** — Standard + dependency scanning in CI, secrets rotation, rate limiting, audit logging. Recommend when the project handles payments, health data, or is a B2B SaaS a customer will security-review.
-- **Compliance-grade** — Hardened + encryption at rest, immutable audit trail, documented data flows, access reviews. Required whenever Q94 (Compliance) names GDPR/HIPAA/PCI-DSS/SOC 2/FedRAMP — don't let a team pick "Basic" here and also answer "yes" to HIPAA; flag the contradiction back to the user.
+- **Compliance-grade** — Hardened + encryption at rest, immutable audit trail, documented data flows, access reviews. Required whenever COMP1–COMP2 (Compliance) names GDPR/HIPAA/PCI-DSS/SOC 2/FedRAMP — don't let a team pick "Basic" here and also answer "yes" to HIPAA; flag the contradiction back to the user.
 
 ## Q35 — Hardening Checklist
 
@@ -62,11 +62,11 @@ Default to **explicit origin allowlist** — never `Access-Control-Allow-Origin:
 Pick based on what's being protected, not just budget:
 
 - **None** — acceptable only for auth-gated internal tools with no public endpoints.
-- **IP-based, fixed window** (Upstash Ratelimit, Vercel Edge Config, or a Redis `INCR`+`EXPIRE` pair) — good default for public APIs and login endpoints specifically (prevents brute force).
+- **Sliding-window rate limiting (Recommended)** — via `@upstash/ratelimit` + `@upstash/redis` (see `references/backend/API_RATE_LIMITING_STRATEGY.md` for tiered endpoint configurations). Sliding window prevents burst abuse at window boundaries far better than fixed-window counters.
 - **Token bucket, per-user** — for API products where you want to allow bursts but cap sustained usage (ties into a pricing/tier model).
 - **Distributed rate limiting** — needed once the app runs on more than one instance/edge location and in-memory counters would undercount.
 
-Always rate-limit the login and password-reset endpoints specifically, even at "Basic" security level — credential stuffing is the most common low-effort attack any public app will see.
+Always rate-limit authentication endpoints (login, signup, password-reset, OTP) specifically, even at "Basic" security level. Note that while per-IP rate limiting mitigates single-source brute force, blunting distributed credential stuffing requires defense-in-depth: account-level failed attempt thresholds, bot detection (Cloudflare Turnstile), and breached-password verification (HaveIBeenPwned range API) per `references/backend/API_RATE_LIMITING_STRATEGY.md`.
 
 ## Q39 — Audit Logging
 
@@ -88,7 +88,7 @@ Filtered by Q20 (API style):
 
 - **API keys only** — simplest, fine for server-to-server or low-stakes public APIs. Rotate-able, but no per-request user identity.
 - **OAuth 2.0 scopes** — when third parties need delegated, limited access on a user's behalf (the standard choice for public APIs with an app ecosystem).
-- **JWT with short expiry + refresh rotation** — the default for first-party web/mobile clients talking to your own backend; keep access tokens short-lived (minutes) and refresh tokens rotating.
+- **JWT with short expiry + refresh rotation** — the default for first-party web/mobile clients talking to your own backend; keep access tokens short-lived (≤15 minutes), idle session timeout (30 minutes), and refresh tokens rotating (≤7 days).
 - **mTLS** — service-to-service only, when both ends are infrastructure you control (microservices, internal mesh) — not appropriate for end-user-facing auth.
 
 ## Penetration Testing Workflow
@@ -203,7 +203,7 @@ npx semgrep --config=p/owasp-top-ten --error
 - [ ] Password policy enforced (min 8 chars, complexity)
   - Result: ✅ Enforced client + server side
 - [ ] Session timeout enforced
-  - Result: ✅ 30 minutes idle timeout
+  - Result: ✅ 30 minutes idle timeout (access token max 15 min, refresh token max 7 days with rotation)
 - [ ] Multi-factor authentication (MFA)
   - Result: ⚠️ Enforced for admin accounts; optional for general users → **RECOMMENDED for Standard, MANDATORY for Hardened/Compliance**
 
@@ -275,6 +275,18 @@ npx semgrep --config=p/owasp-top-ten --error
 
 Don't write a generic "we considered security" paragraph. Use STRIDE at minimum: for each major component (auth, API, database, file storage, third-party integrations), name one plausible threat per category (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege) and the mitigation already chosen from Q34-Q39b above. A threat model that doesn't reference the project's actual architecture is boilerplate and should be rewritten.
 
+### AI & LLM Threat Modeling (OWASP Top 10 for LLMs)
+
+**Required whenever the project integrates generative AI, LLM APIs, embeddings, or agentic tools (Q10 ≠ None or `deliverable_type: ml_model`):**
+
+In addition to standard STRIDE web application threats, `docs/security/THREAT-MODEL.md` must evaluate the OWASP Top 10 for Large Language Model Applications:
+
+1. **LLM01: Prompt Injection (Direct & Indirect):** Untrusted user inputs or third-party web content injected into system prompts overriding instructions. *Mitigation:* Delimit user inputs (`<user_input>`), enforce strict system prompt separation, and use hardened system prompt templates.
+2. **LLM02: Insecure Output Handling:** Raw LLM output rendered directly as unescaped HTML/Markdown or executed in shells. *Mitigation:* Sanitize LLM output through DOMPurify before UI render; never pipe LLM output directly into `eval()`, SQL queries, or shell exec.
+3. **LLM06: Sensitive Information Disclosure / PII Leakage:** LLM exposing private user data or system credentials in completions. *Mitigation:* Client-side/server-side PII scrubbing before prompt construction; zero-data-retention (ZDR) API agreements with model providers.
+4. **LLM04: Model Denial of Service & Context Bombing:** Attackers sending massive token payloads or triggering recursive generation loops. *Mitigation:* Strict `max_tokens` ceilings, request timeouts, and token bucket rate limits per user.
+5. **LLM08: Excessive Agency:** AI agents executing destructive actions (DB deletes, payments, emails) autonomously. *Mitigation:* Human-in-the-loop confirmation gates for any destructive side-effect; transactional outbox with idempotency.
+
 **Concrete boilerplate check (apply this before considering THREAT-MODEL.md done):**
 for each of the ~30 STRIDE entries (6 categories × ~5 components), the threat
 description must name a **specific element from this project's own
@@ -291,7 +303,7 @@ security gate can pass.
 
 ## Writing COMPLIANCE.md
 
-Only generate real content here if Q94/Q95 named an actual regime (GDPR/CCPA/HIPAA/PCI-DSS/SOC 2/ISO 27001/FedRAMP). If none apply, say so explicitly rather than inventing generic "we take compliance seriously" language — an empty-but-honest file is more useful than padded boilerplate a reviewer will discount.
+Only generate real content here if COMP1–COMP2 named an actual regime (GDPR/CCPA/HIPAA/PCI-DSS/SOC 2/ISO 27001/FedRAMP). If none apply, say so explicitly rather than inventing generic "we take compliance seriously" language — an empty-but-honest file is more useful than padded boilerplate a reviewer will discount.
 
 ---
 

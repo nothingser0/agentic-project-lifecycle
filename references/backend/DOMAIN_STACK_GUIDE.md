@@ -236,8 +236,12 @@ Queue:      BullMQ / Laravel Queue (confirmation email, reminder)
 Email:      Resend / Mailgun
 Calendar:   FullCalendar (UI) or custom slot grid
 Payment:    Midtrans / Stripe (if paid booking)
-Deploy:     Railway / Vercel
+Deploy:     Railway / Vercel (General) OR AWS / HIPAA-compliant PaaS (if Healthcare)
 ```
+
+> ⚠️ **Healthcare / Clinical Appointment Scheduling Warning:**  
+> If the booking system handles patient intake, medical specialties, or clinical appointments, linking individual names to appointment times constitutes **Protected Health Information (PHI) under HIPAA** (`modules/00-classifier.md:42`).  
+> **Vendor BAA Requirement:** Standard self-serve Vercel, Supabase, or Railway tiers DO NOT execute Business Associate Agreements (BAAs). The team MUST use enterprise agreements with these vendors, or deploy to hyperscalers with standard BAA click-through execution (AWS, Google Cloud, Azure). Deploying live patient scheduling to self-serve PaaS without an executed BAA is a direct statutory violation.
 
 ### Slot Availability Pattern
 ```sql

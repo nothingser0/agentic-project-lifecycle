@@ -314,6 +314,9 @@ Only relevant if the project actually containerizes (check this against Q19 Back
 - **GHCR (GitHub Container Registry)** — free with a GitHub repo, same auth as the code, good default for private images on small teams.
 - **ECR / GCR** — cloud-native choice once the deploy target is already AWS/GCP, for IAM-integrated pull permissions.
 
+**Supply Chain Integrity (Container Signing):**
+For Large and Enterprise containerized projects, sign pushed images using Cosign (Sigstore keyless OIDC). The deployment gate must verify signatures before allowing pods to run in Kubernetes (`cosign verify`). See `references/security/SECURITY_GATE_GUIDE.md`.
+
 ## Q49 — Deploy-Time Secrets
 
 Should be consistent with the Q36 answer in `references/security/SECURITY_HARDENING_GUIDE.md` — don't let the two diverge (e.g. Vault for app secrets but plaintext env vars in the deploy pipeline defeats the point).
@@ -348,7 +351,7 @@ Should be consistent with the Q36 answer in `references/security/SECURITY_HARDEN
 
 - **Managed DB automatic backups only** — Supabase/RDS/PlanetScale default daily backups; the floor, not the ceiling — confirm the retention window (often 7 days on free tiers) matches the project's actual recovery needs.
 - **+ Point-in-time recovery (PITR)** — needed the moment "restore to 3am this morning" isn't good enough and "restore to the exact minute before the bad migration ran" is required.
-- **+ Cross-region replica** — protects against a full region outage, not just data loss; relevant once Q8 scale or Q94 compliance requires real availability guarantees.
+- **+ Cross-region replica** — protects against a full region outage, not just data loss; relevant once Q8 scale or COMP1–COMP2 compliance requires real availability guarantees.
 - **+ Regular restore drills** — the tier most projects skip and shouldn't: schedule an actual restore-to-a-test-environment quarterly. A backup that has never been restored is a backup you don't actually have.
 
 ## Putting it together: a minimal pipeline

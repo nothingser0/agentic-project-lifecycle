@@ -27,9 +27,9 @@
 brew install gitleaks
 
 # Linux
-wget https://github.com/gitleaks/gitleaks/releases/download/v1.0/gitleaks_8.18.0_linux_x64.tar.gz
-tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
-sudo mv gitleaks /path/to/bin/
+wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+tar -xzf gitleaks_8.18.4_linux_x64.tar.gz
+sudo mv gitleaks /usr/local/bin/
 
 # Windows
 choco install gitleaks
@@ -39,7 +39,7 @@ choco install gitleaks
 
 ```bash
 gitleaks version
-# Should output: v1.0 or later
+# Should output: v8.x or later
 ```
 
 **Create hook:**

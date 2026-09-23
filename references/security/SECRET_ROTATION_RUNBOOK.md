@@ -10,9 +10,23 @@
 
 ---
 
-## General Rotation Workflow
+## Emergency Compromise vs. Scheduled Routine Rotation
 
-**All secret rotations follow this sequence:**
+### Track A: Active Compromise / Public Leak (Immediate Invalidation)
+**Applies when:** Secret leaked in git history, exposed in client logs, or active breach suspected.
+1. **Revoke immediately:** Invalidate the compromised credential in the provider dashboard (AWS, Stripe, DB, GitHub) instantly. Do NOT leave old secrets active.
+2. **Generate and inject new secret:** Add new secret to production environment variables.
+3. **Emergency redeploy:** Force-restart application pods/services to pick up the new secret.
+4. **Terminate active sessions:** Invalidate all active JWT tokens / sessions issued before the revocation timestamp.
+5. **Audit exposure window:** Query audit logs for any unauthorized access between exposure time and revocation.
+*(Principle: Accept brief service degradation over continued unauthorized data exfiltration).*
+
+---
+
+### Track B: Routine / Scheduled Rotation (Zero-Downtime Sequence)
+**Applies when:** Quarterly rotation, employee departure, or planned maintenance.
+
+All routine secret rotations follow this sequence:
 
 1. **Generate new secret** (in provider dashboard/API)
 2. **Add new secret to env** (Vercel/Railway/K8s, do NOT remove old yet)
@@ -21,7 +35,7 @@
 5. **Revoke old secret** (in provider dashboard)
 6. **Remove old secret from env** (cleanup)
 
-**Why this order?** Zero-downtime. If you revoke first, app crashes immediately.
+**Why this order for routine rotation?** Zero-downtime. If you revoke first during routine maintenance, the app crashes immediately.
 
 ---
 
